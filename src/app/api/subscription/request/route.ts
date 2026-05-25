@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createServerClient } from "@/lib/supabase/server";
 import { z } from "zod";
 
 const subscriptionSchema = z.object({
@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
 
     const { hotel_name, contact_name, email, phone, desired_plan, message } = parsed.data;
 
-    const supabase = await createClient();
+    const supabase = await createServerClient();
 
     const { error } = await supabase.from("subscription_requests").insert({
       hotel_name,

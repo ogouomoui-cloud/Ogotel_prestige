@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createServerClient } from "@/lib/supabase/server";
 import { z } from "zod";
 
 const activateSchema = z.object({
@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
 
     const { code, full_name, email, password } = parsed.data;
 
-    const supabase = await createClient();
+    const supabase = await createServerClient();
 
     // Vérifier que le code d'activation est valide
     const { data: activationCode, error: codeError } = await supabase

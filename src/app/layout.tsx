@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Playfair_Display } from "next/font/google";
+import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
-import { Toaster } from "@/components/ui/toaster";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -20,44 +20,44 @@ const playfairDisplay = Playfair_Display({
 });
 
 export const metadata: Metadata = {
-  title: "OGOTEL Prestige | Luxury Hotel & Resort",
+  title: {
+    default: "OGOTEL Prestige — Gestion Hôtelière Premium",
+    template: "%s | OGOTEL Prestige",
+  },
   description:
-    "Experience unparalleled luxury at OGOTEL Prestige. Discover our world-class suites, fine dining, spa, and breathtaking views. Your extraordinary stay awaits.",
+    "OGOTEL Prestige est la solution de gestion hôtelière tout-en-un conçue pour les hôtels de la Côte d'Ivoire. Réservations, facturation, personnel — tout en un seul endroit.",
   keywords: [
     "OGOTEL",
     "Prestige",
-    "luxury hotel",
-    "resort",
-    "5-star hotel",
-    "suite",
-    "spa",
-    "fine dining",
-    "vacation",
+    "gestion hôtelière",
+    "Côte d'Ivoire",
+    "Abidjan",
+    "PMS",
+    "hôtel",
+    "réservation",
+    "SaaS",
   ],
   authors: [{ name: "OGOTEL Prestige" }],
-  icons: {
-    icon: "/logo.svg",
-  },
+  icons: { icon: "/logo.svg" },
   openGraph: {
-    title: "OGOTEL Prestige | Luxury Hotel & Resort",
+    title: "OGOTEL Prestige — Gestion Hôtelière Premium",
     description:
-      "Experience unparalleled luxury at OGOTEL Prestige. Your extraordinary stay awaits.",
+      "La solution de gestion hôtelière tout-en-un pour les hôtels de la Côte d'Ivoire.",
     type: "website",
+    locale: "fr_CI",
   },
 };
 
 export default function RootLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+}: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="fr" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${playfairDisplay.variable} antialiased bg-background text-foreground`}
+        className={`${geistSans.variable} ${geistMono.variable} ${playfairDisplay.variable} antialiased font-sans bg-background text-foreground`}
       >
         {children}
-        <Toaster />
+        <Toaster position="top-right" richColors />
       </body>
     </html>
   );

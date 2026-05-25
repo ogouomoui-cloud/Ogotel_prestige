@@ -8,12 +8,15 @@ export async function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     /*
-     * Match all request paths except:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - public assets (images, fonts, etc.)
+     * Match toutes les routes SAUF :
+     * - _next/static     → fichiers statiques
+     * - _next/image      → optimisation d'images
+     * - favicon.ico      → favicon
+     * - images/          → assets publics
+     * - logo.svg         → logo
+     * - robots.txt       → SEO
+     * - Fichiers médias  → svg, png, jpg, jpeg, gif, webp, ico
      */
-    "/((?!_next/static|_next/image|favicon\\.ico|images|logo\\.svg|robots\\.txt|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon\\.ico|images|logo\\.svg|robots\\.txt|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
   ],
 };

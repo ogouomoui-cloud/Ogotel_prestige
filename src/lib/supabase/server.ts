@@ -1,10 +1,19 @@
-import { createServerClient } from "@supabase/ssr";
+import { createServerClient as sbssrServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 
-export async function createClient() {
+/**
+ * Client Supabase — CÔTÉ SERVEUR uniquement.
+ *
+ * Utilise la ANON_KEY mais avec le contexte cookies du serveur.
+ * Permet de lire/écrire les cookies de session SSR.
+ *
+ * À utiliser dans : Server Components, Server Actions, API Routes.
+ * Ne JAMAIS importer dans un composant 'use client'.
+ */
+export async function createServerClient() {
   const cookieStore = await cookies();
 
-  return createServerClient(
+  return sbssrServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
@@ -19,7 +28,8 @@ export async function createClient() {
             );
           } catch {
             // setAll est appelé depuis un Server Component.
-            // Cela peut être ignoré si middleware rafraîchit les sessions.
+            // Impossible de modifier les cookies ici —
+            // le middleware se charge de rafraîchir la session.
           }
         },
       },

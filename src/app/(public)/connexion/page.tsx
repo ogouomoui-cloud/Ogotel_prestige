@@ -8,7 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
-import { createClient } from "@/lib/supabase/client";
+import { signInWithEmail } from "@/lib/auth/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -50,17 +50,9 @@ export default function ConnexionPage() {
   async function onSubmit(data: LoginValues) {
     setLoading(true);
     try {
-      const supabase = createClient();
-      const { error } = await supabase.auth.signInWithPassword({
-        email: data.email,
-        password: data.password,
-      });
+      const { error } = await signInWithEmail(data.email, data.password);
       if (error) {
-        toast.error(
-          error.message === "Invalid login credentials"
-            ? "E-mail ou mot de passe incorrect."
-            : error.message
-        );
+        toast.error(error);
         return;
       }
       toast.success("Connexion réussie !");

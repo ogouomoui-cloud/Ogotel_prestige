@@ -4,34 +4,58 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Menu,
   LogOut,
   Bell,
   ChevronLeft,
+  ShieldCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { DASHBOARD_NAV, SIDEBAR_ACTIONS } from "@/lib/constants/navigation";
+import { DASHBOARD_NAV } from "@/lib/constants/navigation";
+import { ROLE_LABELS } from "@/lib/constants/roles";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import type { Role } from "@/lib/constants";
 
-export function DashboardSidebar() {
+// ─── Props ────────────────────────────────────────────────────────────
+interface DashboardSidebarProps {
+  profile?: {
+    full_name: string;
+    role: Role;
+    hotel_name?: string;
+  };
+}
+
+// ─── Composant ────────────────────────────────────────────────────────
+export function DashboardSidebar({ profile }: DashboardSidebarProps) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
+
+  // Filtrer la navigation selon le rôle
+  const visibleNav = DASHBOARD_NAV.filter(
+    (item) => !profile || item.roles.includes(profile.role),
+  );
 
   return (
     <aside
       className={cn(
         "hidden lg:flex flex-col border-r border-border bg-white transition-all duration-300",
-        collapsed ? "w-[70px]" : "w-64"
+        collapsed ? "w-[70px]" : "w-64",
       )}
     >
       {/* Logo */}
       <div className="flex h-16 items-center justify-between px-4">
         {!collapsed && (
-          <Link href="/dashboard" className="flex flex-col items-start select-none">
-            <span className="font-serif text-xl font-medium text-navy">OGOTEL</span>
-            <span className="text-[0.55rem] tracking-[0.3em] text-slate">PRESTIGE</span>
+          <Link
+            href="/dashboard"
+            className="flex flex-col items-start select-none"
+          >
+            <span className="font-serif text-xl font-medium text-navy">
+              OGOTEL
+            </span>
+            <span className="text-[0.55rem] tracking-[0.3em] text-slate">
+              PRESTIGE
+            </span>
           </Link>
         )}
         <Button
@@ -43,7 +67,7 @@ export function DashboardSidebar() {
           <ChevronLeft
             className={cn(
               "h-4 w-4 transition-transform",
-              collapsed && "rotate-180"
+              collapsed && "rotate-180",
             )}
           />
         </Button>
@@ -54,8 +78,11 @@ export function DashboardSidebar() {
       {/* Navigation */}
       <ScrollArea className="flex-1 px-3 py-4">
         <nav className="flex flex-col gap-1">
-          {DASHBOARD_NAV.map((item) => {
-            const isActive = pathname === item.href;
+          {visibleNav.map((item) => {
+            const isActive =
+              pathname === item.href ||
+              (item.href !== "/dashboard" &&
+                pathname.startsWith(item.href));
             return (
               <Link
                 key={item.href}
@@ -64,7 +91,7 @@ export function DashboardSidebar() {
                   "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
                   isActive
                     ? "bg-gold/10 text-gold-dark"
-                    : "text-slate hover:bg-muted hover:text-navy"
+                    : "text-slate hover:bg-muted hover:text-navy",
                 )}
               >
                 <item.icon className="h-5 w-5 shrink-0" />
@@ -77,18 +104,42 @@ export function DashboardSidebar() {
 
       <Separator />
 
-      {/* Actions */}
+      {/* Utilisateur + Actions */}
       <div className="p-3 space-y-1">
-        {SIDEBAR_ACTIONS.map((action) => (
-          <Link
-            key={action.label}
-            href={action.href}
-            className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate transition-colors hover:bg-muted hover:text-navy"
-          >
-            <action.icon className="h-5 w-5 shrink-0" />
-            {!collapsed && <span>{action.label}</span>}
-          </Link>
-        ))}
+        {!collapsed && profile && (
+          <div className="mb-3 flex items-center gap-3 rounded-lg bg-ivory px-3 py-2.5">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-navy text-xs font-semibold text-ivory">
+              {profile.full_name.charAt(0).toUpperCase()}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-medium text-navy">
+                {profile.full_name}
+              </p>
+              <div className="flex items-center gap-1">
+                <ShieldCheck className="h-3 w-3 text-gold" />
+                <p className="truncate text-[11px] text-slate">
+                  {ROLE_LABELS[profile.role]}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <Link
+          href="#"
+          className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate transition-colors hover:bg-muted hover:text-navy"
+        >
+          <Bell className="h-5 w-5 shrink-0" />
+          {!collapsed && <span>Notifications</span>}
+        </Link>
+
+        <Link
+          href="/connexion"
+          className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate transition-colors hover:bg-red-50 hover:text-red-600"
+        >
+          <LogOut className="h-5 w-5 shrink-0" />
+          {!collapsed && <span>Déconnexion</span>}
+        </Link>
       </div>
     </aside>
   );

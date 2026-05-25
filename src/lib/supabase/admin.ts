@@ -1,20 +1,27 @@
-import { createClient } from "@supabase/supabase-js";
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 
 /**
- * Client admin Supabase — utilise la SERVICE_ROLE_KEY.
+ * Client Supabase Admin — SERVICE ROLE KEY.
  *
- * ⚠️ Ce client contourne le RLS. À utiliser UNIQUEMENT côté serveur
- *    (Server Components, API Routes, Server Actions).
+ * ⚠️  CONTOURNE LE RLS. À utiliser UNIQUEMENT côté serveur :
+ *     - API Routes (route.ts)
+ *     - Server Actions
+ *     - Server Components
  *
- * Ne JAMAIS importer ce fichier dans un composant 'use client'.
+ * Ne JAMAIS :
+ *     - Exposer cette clé dans les variables NEXT_PUBLIC_*
+ *     - Importer ce fichier dans un composant 'use client'
+ *     - Retourner ce client ou ses résultats directement au client
  */
 export function createAdminClient() {
-  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    throw new Error("SUPABASE_SERVICE_ROLE_KEY n'est pas définie dans .env.local");
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!url || !key) {
+    throw new Error(
+      "Configuration Supabase manquante. Vérifiez NEXT_PUBLIC_SUPABASE_URL et SUPABASE_SERVICE_ROLE_KEY dans .env.local",
+    );
   }
 
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  );
+  return createSupabaseClient(url, key);
 }

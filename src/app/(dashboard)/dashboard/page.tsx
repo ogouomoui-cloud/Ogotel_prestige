@@ -1,367 +1,339 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
-import Link from "next/link";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
-import {
-  CalendarCheck,
-  BedDouble,
-  Receipt,
-  BarChart3,
-  Bell,
-} from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
+import { getUser } from "@/lib/auth/client";
+import { onAuthStateChange } from "@/lib/auth/client";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { StatCard } from "@/components/shared/StatCard";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+  ShieldCheck,
+  LogOut,
+  RefreshCw,
+  AlertTriangle,
+  CheckCircle2,
+  User,
+  Building2,
+  Key,
+} from "lucide-react";
+import type { Role } from "@/lib/constants";
 
-// ─── Données factices ──────────────────────────────────────────────────
-
-const stats = [
-  {
-    title: "Réservations",
-    value: "24",
-    icon: CalendarCheck,
-    trend: { value: "+12%", positive: true },
-  },
-  {
-    title: "Chambres occupées",
-    value: "34/45",
-    icon: BedDouble,
-    trend: { value: "75%", positive: true },
-  },
-  {
-    title: "Revenus du mois",
-    value: "4.5M FCFA",
-    icon: Receipt,
-    trend: { value: "+8%", positive: true },
-  },
-  {
-    title: "Taux d'occupation",
-    value: "78%",
-    icon: BarChart3,
-    trend: { value: "-3%", positive: false },
-  },
-] as const;
-
-type StatusKey = "en_cours" | "confirmee" | "terminee" | "annulee";
-
-interface Reservation {
-  client: string;
-  chambre: string;
-  arrivee: string;
-  depart: string;
-  statut: StatusKey;
-  statutLabel: string;
-  montant: string;
-}
-
-const reservations: Reservation[] = [
-  {
-    client: "Amadou Koné",
-    chambre: "Suite 101",
-    arrivee: "15 Jan",
-    depart: "18 Jan",
-    statut: "en_cours",
-    statutLabel: "En cours",
-    montant: "225 000 FCFA",
-  },
-  {
-    client: "Marie Dupont",
-    chambre: "Deluxe 205",
-    arrivee: "16 Jan",
-    depart: "19 Jan",
-    statut: "confirmee",
-    statutLabel: "Confirmée",
-    montant: "180 000 FCFA",
-  },
-  {
-    client: "Jean-Marc Brou",
-    chambre: "Standard 302",
-    arrivee: "17 Jan",
-    depart: "18 Jan",
-    statut: "terminee",
-    statutLabel: "Terminée",
-    montant: "60 000 FCFA",
-  },
-  {
-    client: "Fatou Diallo",
-    chambre: "Suite 101",
-    arrivee: "20 Jan",
-    depart: "23 Jan",
-    statut: "confirmee",
-    statutLabel: "Confirmée",
-    montant: "225 000 FCFA",
-  },
-  {
-    client: "Olivier Assemian",
-    chambre: "Deluxe 207",
-    arrivee: "20 Jan",
-    depart: "22 Jan",
-    statut: "annulee",
-    statutLabel: "Annulée",
-    montant: "0 FCFA",
-  },
-];
-
-const statusStyles: Record<StatusKey, string> = {
-  en_cours: "bg-emerald-100 text-emerald-700",
-  confirmee: "bg-[#c8a97e]/15 text-gold-dark",
-  terminee: "bg-gray-100 text-gray-600",
-  annulee: "bg-red-100 text-red-700",
+// ─── Badge de couleur par rôle ─────────────────────────────────────────
+const ROLE_STYLES: Record<Role, string> = {
+  super_admin: "bg-red-100 text-red-800 border-red-200",
+  hotel_admin: "bg-navy/10 text-navy border-navy/20",
+  manager: "bg-gold/15 text-gold-dark border-gold/30",
+  receptionist: "bg-emerald-100 text-emerald-800 border-emerald-200",
 };
 
-const roomTypes = [
-  { name: "Suites", current: 8, total: 10 },
-  { name: "Deluxe", current: 15, total: 20 },
-  { name: "Standard", current: 11, total: 15 },
-] as const;
-
-// ─── Composant ─────────────────────────────────────────────────────────
-
-interface ProfileData {
-  full_name: string;
-  role: string;
-  hotel_name?: string;
-}
-
-const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
-  CalendarCheck,
-  BedDouble,
-  Receipt,
-  BarChart3,
+const ROLE_LABELS: Record<Role, string> = {
+  super_admin: "Super Administrateur",
+  hotel_admin: "Administrateur d'hôtel",
+  manager: "Manager",
+  receptionist: "Réceptionniste",
 };
+
+// ─── Composant principal ────────────────────────────────────────────────
 
 export default function DashboardPage() {
   const router = useRouter();
-  const [statsData, setStatsData] = useState<any>(null);
+
+  const [authenticated, setAuthenticated] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
-  const [profile, setProfile] = useState<ProfileData | null>(null);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [profileData, setProfileData] = useState<{
+    full_name: string;
+    role: Role;
+    hotel_name?: string;
+  } | null>(null);
+  const [dbConnected, setDbConnected] = useState<boolean | null>(null);
 
-  const formattedDate = useMemo(
-    () =>
-      new Date().toLocaleDateString("fr-FR", {
-        day: "numeric",
-        month: "long",
-        year: "numeric",
-      }),
-    []
-  );
-
+  // ─── Charger l'état d'authentification ───────────────────────────
   useEffect(() => {
-    async function loadProfile() {
+    async function loadAuth() {
       try {
-        const supabase = createClient();
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) { router.push('/connexion'); return; }
-        const { data } = await supabase
-          .from('profiles')
-          .select('full_name, role, hotels(name)')
-          .eq('id', user.id)
-          .single();
-        if (data) setProfile({ full_name: data.full_name, role: data.role, hotel_name: (data as any).hotels?.name });
-      } catch {
-        // keep null profile
-      }
-    }
-    loadProfile();
-  }, [router]);
+        const { user, session } = await getUser();
+        setAuthenticated(!!session);
 
-  useEffect(() => {
-    async function loadStats() {
-      try {
-        const res = await fetch('/api/dashboard/stats');
-        if (!res.ok) {
-          if (res.status === 401) {
-            router.push('/connexion');
-            return;
+        if (user) {
+          setUserEmail(user.email);
+
+          // Tenter de récupérer le profil depuis Supabase
+          const supabase = (await import("@/lib/supabase/client")).createBrowserClient();
+          const { data: profile, error } = await supabase
+            .from("profiles")
+            .select("full_name, role, hotels(name)")
+            .eq("id", user.id)
+            .single();
+
+          if (profile && !error) {
+            setProfileData({
+              full_name: profile.full_name,
+              role: profile.role,
+              hotel_name: (profile as any).hotels?.name,
+            });
+            setDbConnected(true);
+          } else {
+            setDbConnected(false);
           }
-          throw new Error('Erreur');
         }
-        const data = await res.json();
-        setStatsData(data);
       } catch {
-        // Keep showing fake data as fallback
+        setAuthenticated(false);
+        setDbConnected(null);
       } finally {
         setLoading(false);
       }
     }
-    loadStats();
-  }, [router]);
+    loadAuth();
 
-  // Resolve stats — use real data or fallback
-  const displayStats = statsData?.stats?.map((s: any) => ({
-    ...s,
-    icon: ICON_MAP[s.icon] || CalendarCheck,
-  })) || stats.map((s) => ({ ...s }));
+    // Observer les changements de session en temps réel
+    const unsubscribe = onAuthStateChange((session) => {
+      setAuthenticated(!!session);
+      if (!session) {
+        setUserEmail(null);
+        setProfileData(null);
+      }
+    });
 
-  const displayReservations = statsData?.reservations || reservations;
-  const displayRoomTypes = statsData?.roomTypes || roomTypes;
-  const totalOccupied = statsData?.totalOccupied ?? 34;
-  const totalRooms = statsData?.totalRooms ?? 45;
+    return () => unsubscribe();
+  }, []);
+
+  // ─── Actions ─────────────────────────────────────────────────────
+  async function handleRefresh() {
+    setLoading(true);
+    const { user, session } = await getUser();
+    setAuthenticated(!!session);
+    if (user) {
+      setUserEmail(user.email);
+    }
+    setLoading(false);
+  }
+
+  async function handleLogout() {
+    const { signOut } = await import("@/lib/auth/client");
+    await signOut();
+    router.push("/connexion");
+    router.refresh();
+  }
+
+  // ─── État de chargement ──────────────────────────────────────────
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <Skeleton className="h-8 w-64" />
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {[...Array(3)].map((_, i) => (
+            <Skeleton key={i} className="h-40 rounded-xl" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // ─── Non connecté (ne devrait pas arriver grâce au middleware) ───
+  if (!authenticated) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <Card className="w-full max-w-md text-center">
+          <CardHeader>
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-red-100">
+              <AlertTriangle className="h-8 w-8 text-red-600" />
+            </div>
+            <CardTitle className="mt-4 text-xl text-navy">
+              Non connecté
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-slate">
+              Vous devez être connecté pour accéder au tableau de bord.
+            </p>
+            <Button
+              onClick={() => router.push("/connexion")}
+              className="w-full bg-navy text-ivory hover:bg-navy-light"
+            >
+              Se connecter
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // ─── Connecté — afficher le statut ───────────────────────────────
+  const role = profileData?.role ?? ("receptionist" as Role);
 
   return (
     <div className="space-y-6">
-      {/* ─── Header ─── */}
+      {/* En-tête */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-navy">Tableau de bord</h1>
+          <h1 className="text-2xl font-semibold text-navy">
+            Bienvenue{profileData?.full_name ? `, ${profileData.full_name}` : ""} 👋
+          </h1>
           <p className="mt-1 text-sm text-slate">
-            Bienvenue, {profile?.full_name || ''} ! Voici un aperçu de votre activité.
+            Voici le statut de votre connexion et de votre session.
           </p>
         </div>
-        <div className="flex items-center gap-3">
-          <span className="hidden text-sm text-slate sm:inline">
-            {formattedDate}
-          </span>
-          <Button variant="outline" size="icon" className="relative">
-            <Bell className="h-4 w-4" />
-            <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-gold text-[10px] font-bold text-white">
-              3
-            </span>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={handleRefresh}>
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Actualiser
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleLogout}
+            className="text-red-600 hover:bg-red-50 hover:text-red-700"
+          >
+            <LogOut className="mr-2 h-4 w-4" />
+            Déconnexion
           </Button>
         </div>
       </div>
 
-      {/* ─── Stats ─── */}
-      {loading ? (
-        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-          {[...Array(4)].map((_, i) => (
-            <div key={i} className="rounded-xl border border-border bg-white p-6">
-              <Skeleton className="h-4 w-24 mb-3" />
-              <Skeleton className="h-8 w-16" />
-              <Skeleton className="h-3 w-20 mt-2" />
+      {/* Grille de statut */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {/* ─── Carte : Authentification ────────────────────── */}
+        <Card className="border-green-200 bg-green-50/50">
+          <CardContent className="p-6">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-100">
+                <CheckCircle2 className="h-5 w-5 text-green-600" />
+              </div>
+              <div>
+                <p className="font-medium text-green-800">Connecté</p>
+                <p className="text-xs text-green-600">Session active</p>
+              </div>
             </div>
-          ))}
-        </div>
-      ) : (
-        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-          {displayStats.map((stat: any) => (
-            <StatCard key={stat.title} {...stat} />
-          ))}
-        </div>
-      )}
+            <div className="mt-4 space-y-1 rounded-lg bg-white/80 p-3">
+              <div className="flex items-center gap-2 text-sm">
+                <User className="h-3.5 w-3.5 text-slate" />
+                <span className="text-slate">E-mail :</span>
+                <span className="font-medium text-navy truncate">
+                  {userEmail ?? "—"}
+                </span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
-      {/* ─── Contenu principal ─── */}
-      <div className="grid gap-6 lg:grid-cols-3">
-        {/* ─── Réservations récentes ─── */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-          className="col-span-full rounded-xl border border-border bg-white p-6 shadow-sm lg:col-span-2"
-        >
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-navy">
-              Réservations récentes
-            </h2>
-            <Link
-              href="#"
-              className="text-sm font-medium text-gold hover:text-gold-dark transition-colors"
-            >
-              Voir tout
-            </Link>
-          </div>
-
-          <div className="mt-4 overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="text-slate">Client</TableHead>
-                  <TableHead className="text-slate">Chambre</TableHead>
-                  <TableHead className="text-slate">Arrivée</TableHead>
-                  <TableHead className="text-slate">Départ</TableHead>
-                  <TableHead className="text-slate">Statut</TableHead>
-                  <TableHead className="text-right text-slate">
-                    Montant
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {displayReservations.map((r: any, i: number) => (
-                  <TableRow key={r.id || i}>
-                    <TableCell className="font-medium text-navy">
-                      {r.client}
-                    </TableCell>
-                    <TableCell className="text-slate">{r.chambre}</TableCell>
-                    <TableCell className="text-slate">{r.arrivee}</TableCell>
-                    <TableCell className="text-slate">{r.depart}</TableCell>
-                    <TableCell>
-                      <span
-                        className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${statusStyles[r.statut as StatusKey]}`}
-                      >
-                        {r.statutLabel}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-right font-medium text-navy">
-                      {r.montant}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        </motion.div>
-
-        {/* ─── Chambres ─── */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.3 }}
-          className="rounded-xl border border-border bg-white p-6 shadow-sm"
-        >
-          <h2 className="text-lg font-semibold text-navy">Chambres</h2>
-          <p className="mt-1 text-sm text-slate">
-            Occupation par catégorie
-          </p>
-
-          <div className="mt-6 space-y-5">
-            {displayRoomTypes.map((room: any) => {
-              const percentage = (room.current / room.total) * 100;
-              return (
-                <div key={room.name}>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-navy">
-                      {room.name}
-                    </span>
-                    <span className="text-sm text-slate">
-                      {room.current}/{room.total}
-                    </span>
-                  </div>
-                  <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-gold/15">
-                    <div
-                      className="h-full rounded-full bg-gold transition-all duration-500"
-                      style={{ width: `${percentage}%` }}
-                    />
-                  </div>
+        {/* ─── Carte : Profil & Rôle ───────────────────────── */}
+        <Card className={profileData ? "border-gold/30 bg-gold/5" : "border-amber-200 bg-amber-50/50"}>
+          <CardContent className="p-6">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gold/15">
+                <ShieldCheck className="h-5 w-5 text-gold-dark" />
+              </div>
+              <div>
+                <p className="font-medium text-navy">Rôle</p>
+                <p className="text-xs text-slate">Profil utilisateur</p>
+              </div>
+            </div>
+            <div className="mt-4 space-y-3">
+              <Badge className={ROLE_STYLES[role]} variant="outline">
+                {ROLE_LABELS[role]}
+              </Badge>
+              {profileData?.hotel_name && (
+                <div className="flex items-center gap-2 text-sm">
+                  <Building2 className="h-3.5 w-3.5 text-slate" />
+                  <span className="text-slate">Hôtel :</span>
+                  <span className="font-medium text-navy">
+                    {profileData.hotel_name}
+                  </span>
                 </div>
-              );
-            })}
-          </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
 
-          <div className="mt-6 rounded-lg bg-ivory p-4">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-slate">Total occupées</span>
-              <span className="text-lg font-semibold text-navy">{totalOccupied}/{totalRooms}</span>
-            </div>
-            <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-gold/15">
+        {/* ─── Carte : Base de données ─────────────────────── */}
+        <Card
+          className={
+            dbConnected === true
+              ? "border-green-200 bg-green-50/50"
+              : dbConnected === false
+                ? "border-amber-200 bg-amber-50/50"
+                : "border-slate-200"
+          }
+        >
+          <CardContent className="p-6">
+            <div className="flex items-center gap-3">
               <div
-                className="h-full rounded-full bg-gold transition-all duration-500"
-                style={{ width: `${totalRooms > 0 ? (totalOccupied / totalRooms) * 100 : 0}%` }}
-              />
+                className={`flex h-10 w-10 items-center justify-center rounded-full ${
+                  dbConnected === true
+                    ? "bg-green-100"
+                    : dbConnected === false
+                      ? "bg-amber-100"
+                      : "bg-slate-100"
+                }`}
+              >
+                <Key
+                  className={`h-5 w-5 ${
+                    dbConnected === true
+                      ? "text-green-600"
+                      : dbConnected === false
+                        ? "text-amber-600"
+                        : "text-slate"
+                  }`}
+                />
+              </div>
+              <div>
+                <p className="font-medium text-navy">Base de données</p>
+                <p className="text-xs text-slate">Schéma Supabase</p>
+              </div>
             </div>
-          </div>
-        </motion.div>
+            <div className="mt-4">
+              {dbConnected === true && (
+                <p className="text-sm text-green-700">
+                  ✅ Connecté — le schéma est bien initialisé.
+                </p>
+              )}
+              {dbConnected === false && (
+                <p className="text-sm text-amber-700">
+                  ⚠️ Schéma non trouvé. Exécutez{" "}
+                  <code className="rounded bg-amber-100 px-1.5 py-0.5 text-xs font-mono">
+                    supabase/schema.sql
+                  </code>{" "}
+                  dans le SQL Editor.
+                </p>
+              )}
+              {dbConnected === null && (
+                <p className="text-sm text-slate">
+                  ◌ Impossible de vérifier (pas de profil trouvé).
+                </p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
       </div>
+
+      {/* Section d'aide */}
+      <Card>
+        <CardContent className="p-6">
+          <h3 className="font-medium text-navy">
+            Prochaines étapes
+          </h3>
+          <p className="mt-2 text-sm text-slate">
+            Si la base de données est connectée, vous pouvez commencer à utiliser
+            l&apos;application. Sinon, exécutez le schéma SQL dans le{" "}
+            <a
+              href="https://supabase.com/dashboard/project/igkyjfagucwkznwccknd/sql"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-medium text-gold hover:text-gold-dark underline underline-offset-4"
+            >
+              SQL Editor Supabase
+            </a>
+            , puis créez le super administrateur via l&apos;API{" "}
+            <code className="rounded bg-ivory px-1.5 py-0.5 text-xs font-mono text-navy">
+              POST /api/setup/create-super-admin
+            </code>
+            .
+          </p>
+        </CardContent>
+      </Card>
     </div>
   );
 }

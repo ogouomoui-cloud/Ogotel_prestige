@@ -2,11 +2,13 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
+import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -34,6 +36,8 @@ type LoginValues = z.infer<typeof loginSchema>;
 
 export default function ConnexionPage() {
   const [remember, setRemember] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
 
   const form = useForm<LoginValues>({
     resolver: zodResolver(loginSchema),
@@ -43,10 +47,30 @@ export default function ConnexionPage() {
     },
   });
 
-  function onSubmit(_data: LoginValues) {
-    toast.info(
-      "Fonctionnalité bientôt disponible — connexion Supabase en cours d'intégration."
-    );
+  async function onSubmit(data: LoginValues) {
+    setLoading(true);
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.auth.signInWithPassword({
+        email: data.email,
+        password: data.password,
+      });
+      if (error) {
+        toast.error(
+          error.message === "Invalid login credentials"
+            ? "E-mail ou mot de passe incorrect."
+            : error.message
+        );
+        return;
+      }
+      toast.success("Connexion réussie !");
+      router.push("/dashboard");
+      router.refresh();
+    } catch {
+      toast.error("Une erreur est survenue. Veuillez réessayer.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -141,9 +165,10 @@ export default function ConnexionPage() {
 
               <Button
                 type="submit"
+                disabled={loading}
                 className="w-full rounded-lg bg-navy py-2.5 font-semibold text-ivory hover:bg-navy-light"
               >
-                Se connecter
+                {loading ? "Connexion..." : "Se connecter"}
               </Button>
             </form>
           </Form>
@@ -160,6 +185,7 @@ export default function ConnexionPage() {
             type="button"
             variant="outline"
             className="w-full rounded-lg py-2.5 text-sm font-medium"
+            onClick={() => toast.info("Bientôt disponible")}
           >
             <svg className="h-5 w-5 mr-2" viewBox="0 0 24 24">
               <path

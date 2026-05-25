@@ -1,11 +1,17 @@
+import { createClient } from "@/lib/supabase/server";
+import { redirect } from "next/navigation";
 import { DashboardSidebar } from "@/components/shared/DashboardSidebar";
 import { MobileSidebarTrigger } from "@/components/shared/MobileSidebarTrigger";
 
-export default function DashboardLayout({
+export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect("/connexion");
+
   return (
     <div className="flex h-screen bg-background">
       <DashboardSidebar />

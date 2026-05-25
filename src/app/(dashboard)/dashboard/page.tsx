@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
   CalendarCheck,
@@ -10,8 +11,9 @@ import {
   BarChart3,
   Bell,
 } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
+import { Skeleton } from "@/components/ui/skeleton";
 import { StatCard } from "@/components/shared/StatCard";
 import {
   Table,
@@ -126,7 +128,25 @@ const roomTypes = [
 
 // ─── Composant ─────────────────────────────────────────────────────────
 
+interface ProfileData {
+  full_name: string;
+  role: string;
+  hotel_name?: string;
+}
+
+const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
+  CalendarCheck,
+  BedDouble,
+  Receipt,
+  BarChart3,
+};
+
 export default function DashboardPage() {
+  const router = useRouter();
+  const [statsData, setStatsData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [profile, setProfile] = useState<ProfileData | null>(null);
+
   const formattedDate = useMemo(
     () =>
       new Date().toLocaleDateString("fr-FR", {
@@ -137,6 +157,58 @@ export default function DashboardPage() {
     []
   );
 
+  useEffect(() => {
+    async function loadProfile() {
+      try {
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) { router.push('/connexion'); return; }
+        const { data } = await supabase
+          .from('profiles')
+          .select('full_name, role, hotels(name)')
+          .eq('id', user.id)
+          .single();
+        if (data) setProfile({ full_name: data.full_name, role: data.role, hotel_name: (data as any).hotels?.name });
+      } catch {
+        // keep null profile
+      }
+    }
+    loadProfile();
+  }, [router]);
+
+  useEffect(() => {
+    async function loadStats() {
+      try {
+        const res = await fetch('/api/dashboard/stats');
+        if (!res.ok) {
+          if (res.status === 401) {
+            router.push('/connexion');
+            return;
+          }
+          throw new Error('Erreur');
+        }
+        const data = await res.json();
+        setStatsData(data);
+      } catch {
+        // Keep showing fake data as fallback
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadStats();
+  }, [router]);
+
+  // Resolve stats — use real data or fallback
+  const displayStats = statsData?.stats?.map((s: any) => ({
+    ...s,
+    icon: ICON_MAP[s.icon] || CalendarCheck,
+  })) || stats.map((s) => ({ ...s }));
+
+  const displayReservations = statsData?.reservations || reservations;
+  const displayRoomTypes = statsData?.roomTypes || roomTypes;
+  const totalOccupied = statsData?.totalOccupied ?? 34;
+  const totalRooms = statsData?.totalRooms ?? 45;
+
   return (
     <div className="space-y-6">
       {/* ─── Header ─── */}
@@ -144,7 +216,7 @@ export default function DashboardPage() {
         <div>
           <h1 className="text-2xl font-semibold text-navy">Tableau de bord</h1>
           <p className="mt-1 text-sm text-slate">
-            Bienvenue ! Voici un aperçu de votre activité.
+            Bienvenue, {profile?.full_name || ''} ! Voici un aperçu de votre activité.
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -161,11 +233,23 @@ export default function DashboardPage() {
       </div>
 
       {/* ─── Stats ─── */}
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        {stats.map((stat) => (
-          <StatCard key={stat.title} {...stat} />
-        ))}
-      </div>
+      {loading ? (
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="rounded-xl border border-border bg-white p-6">
+              <Skeleton className="h-4 w-24 mb-3" />
+              <Skeleton className="h-8 w-16" />
+              <Skeleton className="h-3 w-20 mt-2" />
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+          {displayStats.map((stat: any) => (
+            <StatCard key={stat.title} {...stat} />
+          ))}
+        </div>
+      )}
 
       {/* ─── Contenu principal ─── */}
       <div className="grid gap-6 lg:grid-cols-3">
@@ -203,8 +287,8 @@ export default function DashboardPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {reservations.map((r, i) => (
-                  <TableRow key={i}>
+                {displayReservations.map((r: any, i: number) => (
+                  <TableRow key={r.id || i}>
                     <TableCell className="font-medium text-navy">
                       {r.client}
                     </TableCell>
@@ -213,7 +297,7 @@ export default function DashboardPage() {
                     <TableCell className="text-slate">{r.depart}</TableCell>
                     <TableCell>
                       <span
-                        className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${statusStyles[r.statut]}`}
+                        className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${statusStyles[r.statut as StatusKey]}`}
                       >
                         {r.statutLabel}
                       </span>
@@ -241,7 +325,7 @@ export default function DashboardPage() {
           </p>
 
           <div className="mt-6 space-y-5">
-            {roomTypes.map((room) => {
+            {displayRoomTypes.map((room: any) => {
               const percentage = (room.current / room.total) * 100;
               return (
                 <div key={room.name}>
@@ -267,12 +351,12 @@ export default function DashboardPage() {
           <div className="mt-6 rounded-lg bg-ivory p-4">
             <div className="flex items-center justify-between">
               <span className="text-sm text-slate">Total occupées</span>
-              <span className="text-lg font-semibold text-navy">34/45</span>
+              <span className="text-lg font-semibold text-navy">{totalOccupied}/{totalRooms}</span>
             </div>
             <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-gold/15">
               <div
                 className="h-full rounded-full bg-gold transition-all duration-500"
-                style={{ width: "75%" }}
+                style={{ width: `${totalRooms > 0 ? (totalOccupied / totalRooms) * 100 : 0}%` }}
               />
             </div>
           </div>

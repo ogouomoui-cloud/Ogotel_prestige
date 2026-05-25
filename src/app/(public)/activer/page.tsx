@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -17,56 +19,49 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 
-const activationSchema = z
-  .object({
-    code: z
-      .string()
-      .min(1, "Le code d'activation est requis")
-      .min(10, "Le code doit contenir au moins 10 caractères"),
-    hotel_name: z
-      .string()
-      .min(1, "Le nom de l'hôtel est requis")
-      .min(2, "Le nom doit contenir au moins 2 caractères"),
-    full_name: z
-      .string()
-      .min(1, "Votre nom complet est requis")
-      .min(2, "Le nom doit contenir au moins 2 caractères"),
-    email: z
-      .string()
-      .min(1, "L'e-mail est requis")
-      .email("Veuillez entrer un e-mail valide"),
-    password: z
-      .string()
-      .min(1, "Le mot de passe est requis")
-      .min(8, "Le mot de passe doit contenir au moins 8 caractères"),
-    confirm_password: z
-      .string()
-      .min(1, "Veuillez confirmer votre mot de passe"),
-  })
-  .refine((data) => data.password === data.confirm_password, {
-    message: "Les mots de passe ne correspondent pas",
-    path: ["confirm_password"],
-  });
+const activationSchema = z.object({
+  code: z.string().min(1, "Le code est requis"),
+  full_name: z.string().min(2, "Nom requis (min. 2 car.)"),
+  email: z.string().min(1, "E-mail requis").email("E-mail invalide"),
+  password: z.string().min(8, "Min. 8 caractères"),
+});
 
 type ActivationValues = z.infer<typeof activationSchema>;
 
 export default function ActiverPage() {
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
+
   const form = useForm<ActivationValues>({
     resolver: zodResolver(activationSchema),
     defaultValues: {
       code: "",
-      hotel_name: "",
       full_name: "",
       email: "",
       password: "",
-      confirm_password: "",
     },
   });
 
-  function onSubmit(_data: ActivationValues) {
-    toast.info(
-      "Fonctionnalité bientôt disponible — activation Supabase en cours d'intégration."
-    );
+  async function onSubmit(data: ActivationValues) {
+    setLoading(true);
+    try {
+      const res = await fetch('/api/auth/activate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      const result = await res.json();
+      if (!res.ok) {
+        toast.error(result.error || "Erreur lors de l'activation.");
+        return;
+      }
+      toast.success(result.message || "Compte créé avec succès !");
+      router.push("/connexion");
+    } catch {
+      toast.error("Erreur réseau. Vérifiez votre connexion.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -107,25 +102,6 @@ export default function ActiverPage() {
                       <Input
                         placeholder="XXXX-XXXX-XXXX"
                         className="text-center text-lg font-mono uppercase tracking-widest"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="hotel_name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-slate">
-                      Nom de l&apos;hôtel
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="Nom de votre établissement"
                         {...field}
                       />
                     </FormControl>
@@ -188,31 +164,12 @@ export default function ActiverPage() {
                 )}
               />
 
-              <FormField
-                control={form.control}
-                name="confirm_password"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-slate">
-                      Confirmer le mot de passe
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        type="password"
-                        placeholder="Confirmez votre mot de passe"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
               <Button
                 type="submit"
+                disabled={loading}
                 className="w-full rounded-lg bg-gold py-2.5 font-semibold text-white hover:bg-gold-light"
               >
-                Créer mon compte
+                {loading ? "Création..." : "Créer mon compte"}
               </Button>
             </form>
           </Form>

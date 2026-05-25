@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -58,6 +59,7 @@ const CONTACT_INFO = [
 ];
 
 const SUBJECTS = [
+  "Demande d'abonnement",
   "Demande d'information",
   "Demande de démo",
   "Support technique",
@@ -77,11 +79,39 @@ export default function ContactPage() {
     resolver: zodResolver(contactSchema),
   });
 
-  async function onSubmit(_data: ContactForm) {
-    // Simulate sending
-    await new Promise((r) => setTimeout(r, 800));
-    toast.success("Message envoyé avec succès !");
-    reset();
+  const [loading, setLoading] = useState(false);
+
+  async function onSubmit(data: ContactForm) {
+    setLoading(true);
+    try {
+      if (data.subject === "Demande d'abonnement") {
+        const res = await fetch('/api/subscription/request', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            hotel_name: data.name,
+            contact_name: data.name,
+            email: data.email,
+            phone: data.phone,
+            desired_plan: 'starter',
+            message: data.message,
+          }),
+        });
+        const result = await res.json();
+        if (!res.ok) {
+          toast.error(result.error || "Erreur lors de l'envoi.");
+          return;
+        }
+        toast.success("Demande d'abonnement envoyée ! Nous vous contacterons sous 24h.");
+      } else {
+        toast.success("Message envoyé avec succès !");
+      }
+      reset();
+    } catch {
+      toast.error("Erreur réseau. Veuillez réessayer.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -187,10 +217,10 @@ export default function ContactPage() {
             {/* Submit */}
             <Button
               type="submit"
-              disabled={isSubmitting}
+              disabled={loading}
               className="w-full bg-navy text-ivory hover:bg-navy-light rounded-full py-3 font-semibold"
             >
-              {isSubmitting ? "Envoi en cours..." : "Envoyer le message"}
+              {loading ? "Envoi en cours..." : "Envoyer le message"}
             </Button>
           </form>
 

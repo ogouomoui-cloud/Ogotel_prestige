@@ -10,8 +10,9 @@ export const SITE = {
   timezone: "Africa/Abidjan",
   country: "Côte d'Ivoire",
   city: "Abidjan",
-  email: "contact@ogotel-prestige.com",
-  phone: "+225 01 02 03 04 05",
+  email: "omouitsi@gmail.com",
+  phone: "+225 0576103277",
+  whatsapp: "2250576103277",
   address: "Cocody Riviera, Abidjan, Côte d'Ivoire",
   url: "https://ogotel-prestige.com",
 } as const;

@@ -11,6 +11,7 @@ import {
   AccordionContent,
 } from "@/components/ui/accordion";
 import SectionTitle from "@/components/shared/SectionTitle";
+import { SITE } from "@/lib/constants";
 import {
   CalendarCheck,
   BedDouble,
@@ -45,7 +46,7 @@ import {
    ═══════════════════════════════════════════════════════════════════════════ */
 
 const WHATSAPP_URL =
-  "https://wa.me/2250102030405?text=Bonjour%2C%20je%20souhaite%20en%20savoir%20plus%20sur%20OGOTEL%20Prestige";
+  `https://wa.me/${SITE.whatsapp}?text=Bonjour%2C%20je%20souhaite%20en%20savoir%20plus%20sur%20OGOTEL%20Prestige`;
 
 /* ─── Animation variants ─────────────────────────────────────────────────── */
 const fadeUp = {

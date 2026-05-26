@@ -5,10 +5,10 @@ import Link from "next/link";
 import { Menu, X, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
-import { PUBLIC_NAV } from "@/lib/constants";
+import { PUBLIC_NAV, SITE } from "@/lib/constants";
 
 const WHATSAPP_URL =
-  "https://wa.me/2250102030405?text=Bonjour%2C%20je%20souhaite%20en%20savoir%20plus%20sur%20OGOTEL%20Prestige";
+  `https://wa.me/${SITE.whatsapp}?text=Bonjour%2C%20je%20souhaite%20en%20savoir%20plus%20sur%20OGOTEL%20Prestige`;
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);

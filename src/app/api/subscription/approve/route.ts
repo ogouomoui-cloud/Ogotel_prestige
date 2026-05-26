@@ -15,6 +15,17 @@ function slugify(text: string): string {
   );
 }
 
+/**
+ * POST /api/subscription/approve
+ *
+ * Flow (super_admin uniquement) :
+ * 1. Valider la demande d'abonnement
+ * 2. Créer l'hôtel
+ * 3. Récupérer le plan correspondant
+ * 4. Créer l'abonnement (trial 14j)
+ * 5. Générer le code d'activation
+ * 6. Marquer la demande comme approuvée
+ */
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createServerClient();
@@ -30,29 +41,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const supabaseAdmin = createAdminClient();
+    const admin = createAdminClient();
 
-    // Vérifier le rôle super_admin
-    const { data: profile, error: profileError } = await supabaseAdmin
+    // ─── Vérifier le rôle super_admin ─────────────────────────
+    const { data: profile, error: profileError } = await admin
       .from("profiles")
       .select("role")
       .eq("id", user.id)
       .single();
 
-    if (profileError || !profile) {
+    if (profileError || !profile || profile.role !== "super_admin") {
       return NextResponse.json(
-        { error: "Profil non trouvé." },
-        { status: 401 }
-      );
-    }
-
-    if (profile.role !== "super_admin") {
-      return NextResponse.json(
-        { error: "Accès non autorisé." },
+        { error: "Accès réservé au super administrateur." },
         { status: 403 }
       );
     }
 
+    // ─── Parser le body ───────────────────────────────────────
     const body = await request.json();
     const { request_id, notes } = body;
 
@@ -63,8 +68,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Récupérer la demande
-    const { data: subRequest, error: reqError } = await supabaseAdmin
+    // ─── Récupérer la demande ────────────────────────────────
+    const { data: subRequest, error: reqError } = await admin
       .from("subscription_requests")
       .select("*")
       .eq("id", request_id)
@@ -84,34 +89,35 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Générer le code d'activation
-    const { data: codeResult, error: codeError } = await supabaseAdmin.rpc(
-      "generate_activation_code"
-    );
+    // ─── Récupérer le plan correspondant ──────────────────────
+    const { data: plan, error: planError } = await admin
+      .from("plans")
+      .select("*")
+      .eq("tier", subRequest.desired_plan)
+      .single();
 
-    if (codeError || !codeResult) {
-      console.error("Erreur génération code:", codeError);
+    if (planError || !plan) {
       return NextResponse.json(
-        { error: "Erreur lors de la génération du code d'activation." },
+        { error: "Plan non trouvé pour le tier " + subRequest.desired_plan },
         { status: 500 }
       );
     }
 
-    const activationCode = codeResult as string;
+    // ─── 1. Créer l'hôtel ────────────────────────────────────
+    const { data: hotel, error: hotelError } = await admin
+      .from("hotels")
+      .insert({
+        name: subRequest.hotel_name,
+        slug: slugify(subRequest.hotel_name),
+        email: subRequest.email,
+        phone: subRequest.phone,
+        city: "Abidjan",
+        country: "Côte d'Ivoire",
+      })
+      .select("id")
+      .single();
 
-    // Créer l'hôtel
-    const { error: hotelError } = await supabaseAdmin.from("hotels").insert({
-      name: subRequest.hotel_name,
-      slug: slugify(subRequest.hotel_name),
-      email: subRequest.email,
-      phone: subRequest.phone,
-      subscription_plan: subRequest.desired_plan,
-      subscription_status: "pending",
-      activation_code: activationCode,
-      created_by: user.id,
-    });
-
-    if (hotelError) {
+    if (hotelError || !hotel) {
       console.error("Erreur création hôtel:", hotelError);
       return NextResponse.json(
         { error: "Erreur lors de la création de l'hôtel." },
@@ -119,19 +125,57 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Mettre à jour la demande
-    await supabaseAdmin
+    // ─── 2. Créer l'abonnement (trial 14 jours) ──────────────
+    const trialEnd = new Date();
+    trialEnd.setDate(trialEnd.getDate() + 14);
+
+    const { error: subError } = await admin.from("subscriptions").insert({
+      hotel_id: hotel.id,
+      plan_id: plan.id,
+      status: "trial",
+      starts_at: new Date().toISOString(),
+      trial_ends_at: trialEnd.toISOString(),
+      max_rooms: plan.max_rooms,
+      max_users: plan.max_users,
+    });
+
+    if (subError) {
+      console.error("Erreur création abonnement:", subError);
+      // Nettoyer l'hôtel créé
+      await admin.from("hotels").delete().eq("id", hotel.id);
+      return NextResponse.json(
+        { error: "Erreur lors de la création de l'abonnement." },
+        { status: 500 }
+      );
+    }
+
+    // ─── 3. Générer le code d'activation ──────────────────────
+    const { data: activationCode, error: codeError } = await admin.rpc(
+      "generate_activation_code",
+      { p_hotel_id: hotel.id, p_plan_id: plan.id }
+    );
+
+    if (codeError || !activationCode) {
+      console.error("Erreur génération code:", codeError);
+      return NextResponse.json(
+        { error: "Erreur lors de la génération du code d'activation." },
+        { status: 500 }
+      );
+    }
+
+    // ─── 4. Mettre à jour la demande ─────────────────────────
+    await admin
       .from("subscription_requests")
       .update({
         status: "approved",
         reviewed_by: user.id,
         reviewed_at: new Date().toISOString(),
-        notes: notes?.trim() || null,
+        rejection_reason: null,
       })
       .eq("id", request_id);
 
-    // Formater le code pour l'affichage (ex: XXXX-XXXX-XXXX)
-    const formattedCode = activationCode.replace(
+    // ─── 5. Réponse ──────────────────────────────────────────
+    const formattedCode = (activationCode as string).replace(
       /(.{4})(?=.)/g,
       "$1-"
     );
@@ -140,8 +184,10 @@ export async function POST(request: NextRequest) {
       {
         success: true,
         activation_code: activationCode,
+        hotel_id: hotel.id,
         hotel_name: subRequest.hotel_name,
-        message: `Demande approuvée. Code: ${formattedCode}`,
+        plan_name: plan.name,
+        message: `Demande approuvée. Code d'activation : ${formattedCode}`,
       },
       { status: 200 }
     );

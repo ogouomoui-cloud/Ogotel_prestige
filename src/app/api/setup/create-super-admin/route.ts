@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
       await supabaseAdmin.auth.admin.createUser({
         email,
         password,
-        email_confirm: true,
+        emailConfirm: true,
         user_metadata: { full_name: "Super Administrateur" },
       });
 

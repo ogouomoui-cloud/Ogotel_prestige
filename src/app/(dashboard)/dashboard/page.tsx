@@ -58,7 +58,7 @@ export default function DashboardPage() {
         setAuthenticated(!!session);
 
         if (user) {
-          setUserEmail(user.email);
+          setUserEmail(user.email ?? null);
 
           // Tenter de récupérer le profil depuis Supabase
           const supabase = (await import("@/lib/supabase/client")).createBrowserClient();
@@ -106,7 +106,7 @@ export default function DashboardPage() {
     const { user, session } = await getUser();
     setAuthenticated(!!session);
     if (user) {
-      setUserEmail(user.email);
+      setUserEmail(user.email ?? null);
     }
     setLoading(false);
   }

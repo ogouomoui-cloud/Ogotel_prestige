@@ -11,8 +11,6 @@ import { motion } from "framer-motion";
 import { signInWithEmail } from "@/lib/auth/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
 import {
   Form,
   FormControl,
@@ -35,7 +33,6 @@ const loginSchema = z.object({
 type LoginValues = z.infer<typeof loginSchema>;
 
 export default function ConnexionPage() {
-  const [remember, setRemember] = useState(false);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
@@ -131,25 +128,11 @@ export default function ConnexionPage() {
                 )}
               />
 
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Checkbox
-                    id="remember"
-                    checked={remember}
-                    onCheckedChange={(checked) =>
-                      setRemember(checked === true)
-                    }
-                  />
-                  <Label
-                    htmlFor="remember"
-                    className="cursor-pointer text-sm text-slate"
-                  >
-                    Se souvenir de moi
-                  </Label>
-                </div>
+              <div className="flex justify-end">
                 <button
                   type="button"
                   className="text-sm text-gold hover:text-gold-dark transition-colors"
+                  onClick={() => toast.info("Fonctionnalité bientôt disponible")}
                 >
                   Mot de passe oublié ?
                 </button>

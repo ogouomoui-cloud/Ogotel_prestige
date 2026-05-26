@@ -54,7 +54,7 @@ const fadeUp = {
   visible: (i: number) => ({
     opacity: 1,
     y: 0,
-    transition: { delay: i * 0.1, duration: 0.6, ease: "easeOut" },
+    transition: { delay: i * 0.1, duration: 0.6, ease: "easeOut" as const },
   }),
 };
 
@@ -687,7 +687,7 @@ export default function HomePage() {
       {/* ═══════════════════════════════════════════════════════════════
           5. TARIFS
           ═══════════════════════════════════════════════════════════════ */}
-      <section id="tarifs" className="scroll-mt-20 bg-ivory py-20 md:py-28">
+      <section id="tarifs" data-abonnement className="scroll-mt-20 bg-ivory py-20 md:py-28">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <SectionTitle
             label="TARIFS"

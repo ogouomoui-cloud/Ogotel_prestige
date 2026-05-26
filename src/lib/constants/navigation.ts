@@ -146,4 +146,4 @@ export const FOOTER_LINKS: FooterLinkGroup[] = [
 ];
 
 // ─── Rôles ───────────────────────────────────────────────────────────
-export type Role = "super_admin" | "hotel_admin" | "manager" | "receptionist";
+export type { Role } from "./roles";

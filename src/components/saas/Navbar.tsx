@@ -74,7 +74,7 @@ export default function Navbar() {
               asChild
               className="bg-gold text-white hover:bg-gold-light rounded-full px-5 text-sm font-semibold shadow-lg shadow-gold/20"
             >
-              <Link href="/#abonnement">
+              <Link href="/#tarifs">
                 Demander un abonnement
               </Link>
             </Button>
@@ -134,7 +134,7 @@ export default function Navbar() {
                       asChild
                       className="w-full bg-gold text-white hover:bg-gold-light rounded-full font-semibold"
                     >
-                      <Link href="/#abonnement" onClick={() => setOpen(false)}>
+                      <Link href="/#tarifs" onClick={() => setOpen(false)}>
                         Demander un abonnement
                       </Link>
                     </Button>

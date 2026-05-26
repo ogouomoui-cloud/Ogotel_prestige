@@ -45,7 +45,11 @@ export default async function DashboardLayout({
       <div className="flex flex-1 flex-col overflow-hidden">
         {/* Barre supérieure */}
         <header className="flex h-16 items-center gap-4 border-b border-border bg-white/80 px-4 backdrop-blur-md lg:px-6">
-          <MobileSidebarTrigger />
+          <MobileSidebarTrigger
+            profile={{
+              role: profile?.role ?? "receptionist",
+            }}
+          />
           <div className="flex flex-col">
             <span className="font-serif text-lg font-medium text-navy lg:hidden">
               OGOTEL

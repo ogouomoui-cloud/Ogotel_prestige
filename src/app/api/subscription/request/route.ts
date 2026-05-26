@@ -73,22 +73,26 @@ export async function POST(request: NextRequest) {
         const resend = new Resend(resendKey);
         const adminEmail = process.env.SUPER_ADMIN_EMAIL || SITE.email;
 
+        // Escaper les données utilisateur pour prévenir le XSS
+        const esc = (s: string) =>
+          s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+
         await resend.emails.send({
           from: "OGOTEL Prestige <onboarding@resend.dev>",
           to: adminEmail,
-          subject: `Nouvelle demande d'abonnement — ${hotel_name}`,
+          subject: `Nouvelle demande d'abonnement — ${esc(hotel_name)}`,
           html: `
             <h2>Nouvelle demande d'abonnement</h2>
             <table style="border-collapse:collapse; margin-top:16px;">
-              <tr><td style="padding:8px 16px 8px 0;font-weight:bold;">Hôtel :</td><td>${hotel_name}</td></tr>
-              <tr><td style="padding:8px 16px 8px 0;font-weight:bold;">Contact :</td><td>${contact_name}</td></tr>
-              <tr><td style="padding:8px 16px 8px 0;font-weight:bold;">E-mail :</td><td>${email}</td></tr>
-              <tr><td style="padding:8px 16px 8px 0;font-weight:bold;">Téléphone :</td><td>${phone}</td></tr>
-              ${whatsapp ? `<tr><td style="padding:8px 16px 8px 0;font-weight:bold;">WhatsApp :</td><td>${whatsapp}</td></tr>` : ""}
-              ${city ? `<tr><td style="padding:8px 16px 8px 0;font-weight:bold;">Ville :</td><td>${city}</td></tr>` : ""}
+              <tr><td style="padding:8px 16px 8px 0;font-weight:bold;">Hôtel :</td><td>${esc(hotel_name)}</td></tr>
+              <tr><td style="padding:8px 16px 8px 0;font-weight:bold;">Contact :</td><td>${esc(contact_name)}</td></tr>
+              <tr><td style="padding:8px 16px 8px 0;font-weight:bold;">E-mail :</td><td>${esc(email)}</td></tr>
+              <tr><td style="padding:8px 16px 8px 0;font-weight:bold;">Téléphone :</td><td>${esc(phone)}</td></tr>
+              ${whatsapp ? `<tr><td style="padding:8px 16px 8px 0;font-weight:bold;">WhatsApp :</td><td>${esc(whatsapp)}</td></tr>` : ""}
+              ${city ? `<tr><td style="padding:8px 16px 8px 0;font-weight:bold;">Ville :</td><td>${esc(city)}</td></tr>` : ""}
               ${room_count ? `<tr><td style="padding:8px 16px 8px 0;font-weight:bold;">Nb chambres :</td><td>${room_count}</td></tr>` : ""}
-              <tr><td style="padding:8px 16px 8px 0;font-weight:bold;">Plan :</td><td>${desired_plan}</td></tr>
-              <tr><td style="padding:8px 16px 8px 0;font-weight:bold;">Message :</td><td>${message || "Aucun"}</td></tr>
+              <tr><td style="padding:8px 16px 8px 0;font-weight:bold;">Plan :</td><td>${esc(desired_plan)}</td></tr>
+              <tr><td style="padding:8px 16px 8px 0;font-weight:bold;">Message :</td><td>${esc(message || "Aucun")}</td></tr>
             </table>
           `,
         });

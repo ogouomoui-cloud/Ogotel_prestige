@@ -59,7 +59,7 @@ export default function TarifsPage() {
                     : "bg-navy text-ivory hover:bg-navy-light"
                 }`}
               >
-                <Link href="/#abonnement">
+                <Link href="/#tarifs">
                   {`Choisir ${plan.name}`}
                 </Link>
               </Button>

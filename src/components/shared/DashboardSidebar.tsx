@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   LogOut,
   Bell,
@@ -12,7 +12,7 @@ import {
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { DASHBOARD_NAV } from "@/lib/constants/navigation";
+import { DASHBOARD_NAV, SIDEBAR_ACTIONS } from "@/lib/constants/navigation";
 import { ROLE_LABELS } from "@/lib/constants/roles";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import type { Role } from "@/lib/constants";
@@ -29,12 +29,23 @@ interface DashboardSidebarProps {
 // ─── Composant ────────────────────────────────────────────────────────
 export function DashboardSidebar({ profile }: DashboardSidebarProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
 
   // Filtrer la navigation selon le rôle
   const visibleNav = DASHBOARD_NAV.filter(
     (item) => !profile || item.roles.includes(profile.role),
   );
+
+  async function handleLogout() {
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+      router.push("/connexion");
+      router.refresh();
+    } catch {
+      router.push("/connexion");
+    }
+  }
 
   return (
     <aside
@@ -125,21 +136,31 @@ export function DashboardSidebar({ profile }: DashboardSidebarProps) {
           </div>
         )}
 
-        <Link
-          href="#"
-          className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate transition-colors hover:bg-muted hover:text-navy"
-        >
-          <Bell className="h-5 w-5 shrink-0" />
-          {!collapsed && <span>Notifications</span>}
-        </Link>
-
-        <Link
-          href="/connexion"
-          className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate transition-colors hover:bg-red-50 hover:text-red-600"
-        >
-          <LogOut className="h-5 w-5 shrink-0" />
-          {!collapsed && <span>Déconnexion</span>}
-        </Link>
+        {SIDEBAR_ACTIONS.map((action) =>
+          action.label === "Déconnexion" ? (
+            <button
+              key={action.label}
+              type="button"
+              onClick={handleLogout}
+              className={cn(
+                "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors w-full text-left",
+                "text-slate hover:bg-red-50 hover:text-red-600",
+              )}
+            >
+              <action.icon className="h-5 w-5 shrink-0" />
+              {!collapsed && <span>{action.label}</span>}
+            </button>
+          ) : (
+            <Link
+              key={action.label}
+              href={action.href}
+              className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate transition-colors hover:bg-muted hover:text-navy"
+            >
+              <action.icon className="h-5 w-5 shrink-0" />
+              {!collapsed && <span>{action.label}</span>}
+            </Link>
+          ),
+        )}
       </div>
     </aside>
   );

@@ -216,21 +216,21 @@ interface PlanItem {
 
 const PLANS: PlanItem[] = [
   {
-    name: "Essentiel",
-    tier: "essentiel",
-    price: 0,
-    period: "",
-    description: "Idéal pour démarrer avec les fonctionnalités essentielles.",
+    name: "Starter",
+    tier: "starter",
+    price: 20000,
+    period: "/mois",
+    description: "Idéal pour les petits hôtels qui débutent avec une gestion numérique.",
     features: [
-      "Gestion des réservations",
-      "Gestion des chambres",
-      "Facturation basique",
-      "Jusqu'à 15 chambres",
-      "3 utilisateurs",
+      "1 hôtel",
+      "Jusqu'à 20 chambres",
+      "2 utilisateurs",
+      "Réservations basiques",
+      "Facturation",
       "Support par e-mail",
     ],
     popular: false,
-    cta: "Commencer gratuitement",
+    cta: "Choisir Starter",
   },
   {
     name: "Pro",
@@ -239,13 +239,14 @@ const PLANS: PlanItem[] = [
     period: "/mois",
     description: "Pour les hôtels en croissance qui ont besoin de plus.",
     features: [
-      "Tout le plan Essentiel, plus :",
-      "Jusqu'à 50 chambres",
+      "Tout le plan Starter, plus :",
+      "Jusqu'à 100 chambres",
       "10 utilisateurs",
-      "Tableau de bord analytique",
-      "Facturation avancée",
-      "Export PDF des rapports",
+      "Réservations avancées",
+      "Facturation & comptabilité",
+      "Statistiques détaillées",
       "Support prioritaire WhatsApp",
+      "Personnalisation",
     ],
     popular: true,
     cta: "Choisir Pro",
@@ -253,17 +254,17 @@ const PLANS: PlanItem[] = [
   {
     name: "Prestige",
     tier: "prestige",
-    price: 150000,
+    price: 90000,
     period: "/mois",
     description: "La solution complète pour les hôtels haut de gamme.",
     features: [
       "Tout le plan Pro, plus :",
+      "Multi-hôtels",
       "Chambres illimitées",
       "Utilisateurs illimités",
-      "Multi-hôtels",
       "API & intégrations",
+      "Formation dédiée",
       "Manager de compte dédié",
-      "Formation personnalisée",
       "Support 24/7",
     ],
     popular: false,
@@ -322,7 +323,7 @@ const FAQ_DATA: FAQItem[] = [
   {
     question: "Comment fonctionne le système d'abonnement ?",
     answer:
-      "Nous proposons 3 formules : Essentiel (gratuit), Pro et Prestige. Vous choisissez votre plan, remplissez un formulaire de demande, effectuez le paiement manuellement, puis notre équipe valide votre dossier et vous envoie un code d'activation pour créer votre compte.",
+      "Nous proposons 3 formules : Starter (20 000 FCFA), Pro (50 000 FCFA) et Prestige (90 000 FCFA). Vous choisissez votre plan, remplissez un formulaire de demande, effectuez le paiement manuellement, puis notre équipe valide votre dossier et vous envoie un code d'activation pour créer votre compte.",
   },
   {
     question: "Le paiement se fait-il en ligne ?",
@@ -352,13 +353,12 @@ const FAQ_DATA: FAQItem[] = [
   {
     question: "Puis-je essayer avant de m'abonner ?",
     answer:
-      "Oui ! Le plan Essentiel est entièrement gratuit et vous permet de découvrir les fonctionnalités de base. Vous pouvez aussi demander une démonstration personnalisée avec notre équipe pour voir OGOTEL Prestige en action.",
+      "Oui ! Vous pouvez demander une démonstration personnalisée avec notre équipe pour voir OGOTEL Prestige en action. Le plan Starter à 20 000 FCFA/mois est accessible et vous permet de découvrir toutes les fonctionnalités de base.",
   },
 ];
 
 /* ─── Helpers ───────────────────────────────────────────────────────────── */
 function formatPrice(amount: number, period?: string) {
-  if (amount === 0) return "Gratuit";
   const formatted = new Intl.NumberFormat("fr-FR").format(amount);
   return `${formatted} FCFA${period ? period : "/mois"}`;
 }
@@ -464,13 +464,13 @@ export default function HomePage() {
                 className="flex flex-wrap items-center gap-x-5 gap-y-2 mt-8 text-ivory/40 text-sm"
               >
                 <span className="flex items-center gap-1.5">
-                  <Check className="h-3.5 w-3.5 text-gold" /> Essai gratuit
-                </span>
-                <span className="flex items-center gap-1.5">
                   <Check className="h-3.5 w-3.5 text-gold" /> Sans engagement
                 </span>
                 <span className="flex items-center gap-1.5">
                   <Check className="h-3.5 w-3.5 text-gold" /> Support local
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <Check className="h-3.5 w-3.5 text-gold" /> Données sécurisées
                 </span>
               </motion.div>
             </motion.div>
@@ -692,7 +692,7 @@ export default function HomePage() {
           <SectionTitle
             label="TARIFS"
             title="Choisissez la formule qui vous convient"
-            description="Des prix transparents, sans frais cachés. Commencez gratuitement et évoluez à votre rythme."
+            description="Des prix transparents, sans frais cachés. Choisissez la formule adaptée à votre établissement."
           />
 
           <motion.div
@@ -742,27 +742,16 @@ export default function HomePage() {
                       plan.popular ? "text-ivory" : "text-navy"
                     }`}
                   >
-                    {plan.price === 0 ? "Gratuit" : ""}
+                    {new Intl.NumberFormat("fr-FR").format(plan.price)}{" "}
+                    FCFA
+                    <span
+                      className={`text-sm ${
+                        plan.popular ? "text-ivory/50" : "text-slate"
+                      }`}
+                    >
+                      {plan.period}
+                    </span>
                   </span>
-                  {plan.price > 0 && (
-                    <>
-                      <span
-                        className={`text-3xl font-bold ${
-                          plan.popular ? "text-ivory" : "text-navy"
-                        }`}
-                      >
-                        {new Intl.NumberFormat("fr-FR").format(plan.price)}{" "}
-                        FCFA
-                      </span>
-                      <span
-                        className={`text-sm ${
-                          plan.popular ? "text-ivory/50" : "text-slate"
-                        }`}
-                      >
-                        {plan.period}
-                      </span>
-                    </>
-                  )}
                 </div>
 
                 <ul className="space-y-3 mb-8">

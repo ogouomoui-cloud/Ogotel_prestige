@@ -11,7 +11,7 @@ export default function TarifsPage() {
         <SectionTitle
           label="TARIFS"
           title="Des formules adaptées à votre établissement"
-          description="Choisissez le plan qui correspond à la taille de votre hôtel. Tous les plans incluent un essai gratuit de 14 jours."
+          description="Choisissez le plan qui correspond à la taille de votre hôtel. Sans engagement, sans frais cachés."
         />
 
         <div className="grid md:grid-cols-3 gap-6 lg:gap-8">
@@ -35,18 +35,12 @@ export default function TarifsPage() {
               </h3>
 
               <div className="mt-4 mb-6">
-                {plan.price === 0 ? (
-                  <span className="text-navy text-4xl font-bold">Gratuit</span>
-                ) : (
-                  <>
-                    <span className="text-navy text-4xl font-bold">
-                      {plan.price.toLocaleString("fr-FR")} FCFA
-                    </span>
-                    <span className="text-slate text-sm ml-1">
-                      {plan.period}
-                    </span>
-                  </>
-                )}
+                <span className="text-navy text-4xl font-bold">
+                  {plan.price.toLocaleString("fr-FR")} FCFA
+                </span>
+                <span className="text-slate text-sm ml-1">
+                  {plan.period}
+                </span>
               </div>
 
               <ul className="space-y-3 flex-1">
@@ -65,8 +59,8 @@ export default function TarifsPage() {
                     : "bg-navy text-ivory hover:bg-navy-light"
                 }`}
               >
-                <Link href="/connexion">
-                  {plan.price === 0 ? "Commencer gratuitement" : "Choisir ce plan"}
+                <Link href="/#abonnement">
+                  {`Choisir ${plan.name}`}
                 </Link>
               </Button>
             </div>
@@ -74,7 +68,7 @@ export default function TarifsPage() {
         </div>
 
         <p className="text-sm text-slate text-center mt-8">
-          Tous les prix sont en FCFA. Paiement par virement ou mobile money.
+          Tous les prix sont en FCFA. Paiement par Wave, Orange Money, espèces ou virement bancaire.
         </p>
       </div>
     </section>

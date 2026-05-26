@@ -33,8 +33,8 @@ export const SUBSCRIPTION_PLANS = [
   {
     id: "starter",
     name: "Starter",
-    price: 0,
-    period: "essai gratuit",
+    price: 20_000,
+    period: "/ mois",
     features: [
       "1 hôtel",
       "Jusqu'à 20 chambres",
@@ -46,9 +46,9 @@ export const SUBSCRIPTION_PLANS = [
     popular: false,
   },
   {
-    id: "premium",
-    name: "Premium",
-    price: 75_000,
+    id: "pro",
+    name: "Pro",
+    price: 50_000,
     period: "/ mois",
     features: [
       "1 hôtel",
@@ -57,15 +57,15 @@ export const SUBSCRIPTION_PLANS = [
       "Réservations avancées",
       "Facturation & comptabilité",
       "Statistiques détaillées",
-      "Support prioritaire",
+      "Support prioritaire WhatsApp",
       "Personnalisation",
     ],
     popular: true,
   },
   {
-    id: "enterprise",
-    name: "Enterprise",
-    price: 150_000,
+    id: "prestige",
+    name: "Prestige",
+    price: 90_000,
     period: "/ mois",
     features: [
       "Multi-hôtels",
@@ -75,7 +75,7 @@ export const SUBSCRIPTION_PLANS = [
       "API & intégrations",
       "Formation dédiée",
       "Manager de compte dédié",
-      "SLA garanti",
+      "Support 24/7",
     ],
     popular: false,
   },

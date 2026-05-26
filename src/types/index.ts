@@ -1,7 +1,7 @@
 import type { Role } from "@/lib/constants";
 
 // ─── Plans d'abonnement ──────────────────────────────────────────
-export type PlanTier = "essentiel" | "pro" | "prestige";
+export type PlanTier = "starter" | "pro" | "prestige";
 
 export type SubscriptionStatus =
   | "trial"
@@ -250,7 +250,7 @@ export interface ActivityLog {
 
 // ─── Labels pour l'affichage ─────────────────────────────────────
 export const PLAN_TIER_LABELS: Record<PlanTier, string> = {
-  essentiel: "Essentiel",
+  starter: "Starter",
   pro: "Pro",
   prestige: "Prestige",
 };

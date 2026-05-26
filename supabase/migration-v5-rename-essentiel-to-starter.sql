@@ -51,9 +51,9 @@ END $$;
 
 -- ═══════════════════════════════════════════════════════════════
 --  2. Renommer essentiel → starter dans le type plan_tier
+--     (PostgreSQL 12+ : ALTER TYPE ... RENAME VALUE)
 -- ═══════════════════════════════════════════════════════════════
 
--- Vérifier si 'essentiel' existe dans le type
 DO $$
 DECLARE
   v_has_essentiel BOOLEAN;
@@ -66,34 +66,18 @@ BEGIN
   ) INTO v_has_essentiel;
 
   IF v_has_essentiel THEN
-    -- Ajouter 'starter' si absent
-    IF NOT EXISTS (
-      SELECT 1 FROM pg_enum
-      JOIN pg_type ON pg_enum.enumtypid = pg_type.oid
-      WHERE pg_type.typname = 'plan_tier'
-        AND pg_enum.enumlabel = 'starter'
-    ) THEN
-      ALTER TYPE plan_tier ADD VALUE 'starter';
-    END IF;
+    -- PostgreSQL 12+ : renommer directement la valeur de l'enum
+    ALTER TYPE plan_tier RENAME VALUE 'essentiel' TO 'starter';
+  END IF;
 
-    -- Mettre à jour les données existantes
-    UPDATE subscription_requests SET desired_plan = 'starter' WHERE desired_plan = 'essentiel';
-    UPDATE plans SET tier = 'starter' WHERE tier = 'essentiel';
-
-    -- Recréer le type sans 'essentiel'
-    BEGIN;
-      ALTER TYPE plan_tier RENAME TO plan_tier_old;
-
-      CREATE TYPE plan_tier AS ENUM ('starter', 'pro', 'prestige');
-
-      ALTER TABLE plans ALTER COLUMN tier TYPE plan_tier USING tier::text::plan_tier;
-      ALTER TABLE subscription_requests ALTER COLUMN desired_plan TYPE plan_tier USING desired_plan::text::plan_tier;
-
-      DROP TYPE plan_tier_old;
-    COMMIT;
-
-    -- Mettre à jour le default
-    ALTER TABLE subscription_requests ALTER COLUMN desired_plan SET DEFAULT 'starter';
+  -- Vérifier que 'starter' existe (si le schéma a été créé avec schema.sql)
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_enum
+    JOIN pg_type ON pg_enum.enumtypid = pg_type.oid
+    WHERE pg_type.typname = 'plan_tier'
+      AND pg_enum.enumlabel = 'starter'
+  ) THEN
+    ALTER TYPE plan_tier ADD VALUE IF NOT EXISTS 'starter';
   END IF;
 END $$;
 

@@ -84,3 +84,21 @@ Stage Summary:
 - ✅ Contact: omouitsi@gmail.com et 2250576103277 cohérents dans .env, site.ts, schema.sql
 - ✅ Resend API key configurée et utilisée dans /api/subscription/request
 - AUCUNE incohérence trouvée entre le schéma Supabase et le code
+
+---
+Task ID: fix-sql-migration-v5
+Agent: Main Coordinator
+Task: Corriger l'erreur SQL dans migration-v5 (BEGIN imbriqué dans DO block)
+
+Work Log:
+- Analysé l'erreur : PostgreSQL 42601 "syntax error at or near ';'" à la ligne 84
+- Cause : BEGIN; ... COMMIT; imbriqué dans un bloc DO $$ ... END $$; (transactions imbriquées interdites)
+- Ancienne approche : RENAME type → CREATE new type → ALTER columns → DROP old type (requiert BEGIN/COMMIT)
+- Nouvelle approche : ALTER TYPE plan_tier RENAME VALUE 'essentiel' TO 'starter' (PostgreSQL 12+)
+- Supabase utilise PostgreSQL 15+, cette syntaxe est disponible
+- Réécrit le bloc complet sans BEGIN/COMMIT imbriqué
+
+Stage Summary:
+- migration-v5-rename-essentiel-to-starter.sql corrigé
+- Utilise ALTER TYPE ... RENAME VALUE au lieu de recréer le type
+- Le fichier est prêt à être réexécuté dans Supabase SQL Editor

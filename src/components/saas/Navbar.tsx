@@ -2,10 +2,13 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Menu, X } from "lucide-react";
+import { Menu, X, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 import { PUBLIC_NAV } from "@/lib/constants";
+
+const WHATSAPP_URL =
+  "https://wa.me/2250102030405?text=Bonjour%2C%20je%20souhaite%20en%20savoir%20plus%20sur%20OGOTEL%20Prestige";
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
@@ -38,12 +41,12 @@ export default function Navbar() {
           </Link>
 
           {/* Desktop nav */}
-          <ul className="hidden md:flex items-center gap-1">
+          <ul className="hidden lg:flex items-center gap-1">
             {PUBLIC_NAV.map((item) => (
               <li key={item.href}>
                 <Link
                   href={item.href}
-                  className="text-ivory/70 hover:text-ivory text-sm font-medium px-4 py-2 rounded-full transition-colors hover:bg-white/10"
+                  className="text-ivory/70 hover:text-ivory text-sm font-medium px-3 py-2 rounded-full transition-colors hover:bg-white/10"
                 >
                   {item.label}
                 </Link>
@@ -52,7 +55,7 @@ export default function Navbar() {
           </ul>
 
           {/* Desktop CTA */}
-          <div className="hidden md:flex items-center gap-3">
+          <div className="hidden lg:flex items-center gap-3">
             <Button
               variant="outline"
               className="border-ivory/20 text-ivory hover:bg-white/10 hover:text-ivory rounded-full px-5 text-sm"
@@ -60,14 +63,19 @@ export default function Navbar() {
             >
               <Link href="/connexion">Connexion</Link>
             </Button>
-            <Button className="bg-gold text-white hover:bg-gold-light rounded-full px-5 text-sm font-semibold">
-              Essai gratuit
+            <Button
+              asChild
+              className="bg-gold text-white hover:bg-gold-light rounded-full px-5 text-sm font-semibold shadow-lg shadow-gold/20"
+            >
+              <Link href="/contact">
+                Demander un abonnement
+              </Link>
             </Button>
           </div>
 
           {/* Mobile menu */}
           <Sheet open={open} onOpenChange={setOpen}>
-            <SheetTrigger asChild className="md:hidden">
+            <SheetTrigger asChild className="lg:hidden">
               <button
                 aria-label="Menu"
                 className="text-ivory p-2 rounded-lg hover:bg-white/10 transition-colors"
@@ -89,7 +97,7 @@ export default function Navbar() {
                     <X className="h-5 w-5" />
                   </button>
                 </div>
-                <nav className="flex-1 px-4">
+                <nav className="flex-1 px-4 overflow-y-auto">
                   <ul className="space-y-1">
                     {PUBLIC_NAV.map((item) => (
                       <li key={item.href}>
@@ -114,9 +122,24 @@ export default function Navbar() {
                       Connexion
                     </Link>
                   </Button>
-                  <Button className="w-full bg-gold text-white hover:bg-gold-light rounded-full font-semibold">
-                    Essai gratuit
+                  <Button
+                    asChild
+                    className="w-full bg-gold text-white hover:bg-gold-light rounded-full font-semibold"
+                  >
+                    <Link href="/contact" onClick={() => setOpen(false)}>
+                      Demander un abonnement
+                    </Link>
                   </Button>
+                  <a
+                    href={WHATSAPP_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => setOpen(false)}
+                    className="flex items-center justify-center gap-2 w-full py-2.5 text-ivory/60 hover:text-ivory text-sm transition-colors"
+                  >
+                    <MessageCircle className="h-4 w-4" />
+                    Nous contacter sur WhatsApp
+                  </a>
                 </div>
               </div>
             </SheetContent>

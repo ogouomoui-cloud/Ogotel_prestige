@@ -141,3 +141,18 @@ html { scroll-behavior: smooth; }
 .delay-200 { animation-delay: .2s; }
 .delay-300 { animation-delay: .3s; }
 .delay-400 { animation-delay: .4s; }
+
+/* ─── Floating WhatsApp pulse ─── */
+@keyframes waPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+  50%      { box-shadow: 0 0 0 12px rgba(16, 185, 129, 0); }
+}
+.fixed[aria-label*="WhatsApp"] {
+  animation: waPulse 2.5s ease-in-out infinite;
+}
+
+/* ─── Accordion open transition ─── */
+[data-slot="accordion-item"] {
+  overflow: hidden;
+  border-radius: 0.75rem;
+}

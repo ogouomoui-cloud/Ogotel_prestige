@@ -22,9 +22,12 @@ export interface NavItem {
 }
 
 export const PUBLIC_NAV: NavItem[] = [
-  { label: "Accueil",     href: "/" },
-  { label: "Tarifs",      href: "/tarifs" },
-  { label: "Contact",     href: "/contact" },
+  { label: "Accueil",           href: "/#accueil" },
+  { label: "Fonctionnalités",   href: "/#fonctionnalites" },
+  { label: "Comment ça marche", href: "/#comment-ca-marche" },
+  { label: "Tarifs",            href: "/#tarifs" },
+  { label: "FAQ",               href: "/#faq" },
+  { label: "Contact",           href: "/contact" },
 ];
 
 // ─── Navigation dashboard ────────────────────────────────────────────

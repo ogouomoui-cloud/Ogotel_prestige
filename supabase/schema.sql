@@ -625,7 +625,7 @@ SECURITY DEFINER
 SET search_path = ''
 AS $$
 DECLARE
-  v_super_admin_email TEXT := 'admin@ogotel-prestige.com';
+  v_super_admin_email TEXT := 'omouitsi@gmail.com';
 BEGIN
   INSERT INTO public.profiles (id, email, full_name, role, is_active)
   VALUES (

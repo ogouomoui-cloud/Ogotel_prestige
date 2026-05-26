@@ -58,3 +58,29 @@ Stage Summary:
 - Tous les imports API corrigés (createServerClient au lieu de createClient)
 - Toutes les routes répondent correctement
 - src/lib/supabase/middleware.ts conservé pour référence future (migration vers proxy.ts)
+
+---
+Task ID: verify-schema-consistency
+Agent: Main Coordinator
+Task: Vérifier la conformité des informations entre le schéma Supabase et le code applicatif
+
+Work Log:
+- Lecture complète de supabase/schema.sql (11 tables, 11 ENUMs, triggers, RLS, fonctions RPC)
+- Lecture de src/types/index.ts, src/lib/constants/roles.ts, src/lib/constants/site.ts
+- Lecture de l'API route /api/auth/login/route.ts et /api/subscription/request/route.ts
+- Lecture de la page contact /contact/page.tsx
+- Lecture de la landing page /page.tsx (plans, FAQ, CTA)
+- Vérification .env (SUPER_ADMIN_EMAIL, SUPER_ADMIN_WHATSAPP, RESEND_API_KEY)
+- Cross-reference exhaustif de chaque ENUM, table, trigger et API route
+
+Stage Summary:
+- ✅ plan_tier: Supabase (starter/pro/prestige) = types/index.ts = roles.ts = API = landing page
+- ✅ user_role: Supabase (super_admin/hotel_admin/manager/receptionist) = roles.ts = login API
+- ✅ subscription_requests: tous les champs (whatsapp, city, room_count) présents dans DB + type + API
+- ✅ profiles: champs (role, is_active, hotel_id) cohérents entre DB et login API
+- ✅ handle_new_user trigger: omouitsi@gmail.com = .env = site.ts
+- ✅ Tous les 11 ENUMs Supabase correspondent exactement aux types TypeScript
+- ✅ Plans: Starter 20k / Pro 50k / Prestige 90k FCFA partout (roles.ts, page.tsx, FAQ)
+- ✅ Contact: omouitsi@gmail.com et 2250576103277 cohérents dans .env, site.ts, schema.sql
+- ✅ Resend API key configurée et utilisée dans /api/subscription/request
+- AUCUNE incohérence trouvée entre le schéma Supabase et le code

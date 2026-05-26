@@ -77,7 +77,7 @@ CREATE TYPE user_role AS ENUM (
 );
 
 CREATE TYPE plan_tier AS ENUM (
-  'essentiel',
+  'starter',
   'pro',
   'prestige'
 );
@@ -178,7 +178,7 @@ CREATE TABLE plans (
   CONSTRAINT plans_price_positive   CHECK (price_monthly >= 0)
 );
 
-COMMENT ON TABLE  plans IS 'Plans d''abonnement — 3 offres Essentiel / Pro / Prestige';
+COMMENT ON TABLE  plans IS 'Plans d''abonnement — 3 offres Starter / Pro / Prestige';
 COMMENT ON COLUMN plans.price_monthly IS 'Prix mensuel en FCFA';
 COMMENT ON COLUMN plans.features IS 'Liste JSON des fonctionnalités incluses';
 
@@ -240,7 +240,10 @@ CREATE TABLE subscription_requests (
   contact_name      TEXT NOT NULL,
   email             TEXT NOT NULL,
   phone             TEXT NOT NULL,
-  desired_plan      plan_tier NOT NULL DEFAULT 'essentiel',
+  whatsapp          TEXT,
+  city              TEXT,
+  room_count        INTEGER,
+  desired_plan      plan_tier NOT NULL DEFAULT 'starter',
   message           TEXT,
   status            request_status NOT NULL DEFAULT 'pending',
   reviewed_by       UUID REFERENCES auth.users(id),
@@ -1198,19 +1201,19 @@ CREATE POLICY "actlog_hotel_read" ON activity_logs
 INSERT INTO plans (name, tier, price_monthly, max_hotels, max_rooms, max_users, features) VALUES
 
   (
-    'Essentiel',
-    'essentiel',
-    0,
+    'Starter',
+    'starter',
+    20000,
     1,
-    15,
-    3,
+    20,
+    2,
     '[
-      "Gestion des réservations",
+      "Gestion des réservations basiques",
       "Gestion des chambres",
       "Facturation basique",
       "1 hôtel",
-      "Jusqu''à 15 chambres",
-      "3 utilisateurs",
+      "Jusqu''à 20 chambres",
+      "2 utilisateurs",
       "Support par e-mail"
     ]'::jsonb
   ),
@@ -1220,26 +1223,26 @@ INSERT INTO plans (name, tier, price_monthly, max_hotels, max_rooms, max_users, 
     'pro',
     50000,
     1,
-    50,
+    100,
     10,
     '[
-      "Gestion des réservations avancée",
+      "Réservations avancées",
       "Gestion complète des chambres",
       "Facturation & comptabilité",
-      "Tableau de bord analytique",
+      "Statistiques détaillées",
       "1 hôtel",
-      "Jusqu''à 50 chambres",
+      "Jusqu''à 100 chambres",
       "10 utilisateurs",
-      "Support prioritaire",
-      "Export PDF"
+      "Support prioritaire WhatsApp",
+      "Personnalisation"
     ]'::jsonb
   ),
 
   (
     'Prestige',
     'prestige',
-    150000,
-    1,
+    90000,
+    999,
     999,
     999,
     '[
@@ -1248,11 +1251,9 @@ INSERT INTO plans (name, tier, price_monthly, max_hotels, max_rooms, max_users, 
       "Chambres illimitées",
       "Utilisateurs illimités",
       "API & intégrations",
+      "Formation dédiée",
       "Manager de compte dédié",
-      "Formation personnalisée",
-      "Support 24/7",
-      "Customisation avancée",
-      "Statistiques avancées"
+      "Support 24/7"
     ]'::jsonb
   )
 

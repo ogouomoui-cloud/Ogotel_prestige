@@ -88,6 +88,9 @@ export interface SubscriptionRequest {
   contact_name: string;
   email: string;
   phone: string;
+  whatsapp: string | null;
+  city: string | null;
+  room_count: number | null;
   desired_plan: PlanTier;
   message: string | null;
   status: RequestStatus;

@@ -69,7 +69,6 @@ export async function POST(request: NextRequest) {
     const resendKey = process.env.RESEND_API_KEY;
     if (resendKey) {
       try {
-        // @ts-expect-error — resend is optional, may not be installed
         const { Resend } = await import("resend");
         const resend = new Resend(resendKey);
         const adminEmail = process.env.SUPER_ADMIN_EMAIL || SITE.email;

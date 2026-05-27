@@ -14,6 +14,7 @@ import {
   ScrollText,
   CreditCard,
   Activity,
+  ArrowRightLeft,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { Role } from "./roles";
@@ -99,6 +100,18 @@ export const DASHBOARD_NAV: SidebarItem[] = [
     roles: ["hotel_admin", "manager", "receptionist"],
   },
   {
+    label: "Check-in / Check-out",
+    href: "/dashboard/check-in-out",
+    icon: ArrowRightLeft,
+    roles: ["hotel_admin", "manager", "receptionist"],
+  },
+  {
+    label: "Paiements",
+    href: "/dashboard/paiements",
+    icon: Wallet,
+    roles: ["hotel_admin", "manager", "receptionist"],
+  },
+  {
     label: "Personnel",
     href: "/dashboard/personnel",
     icon: UserCircle,
@@ -114,6 +127,7 @@ export const DASHBOARD_NAV: SidebarItem[] = [
 
 // ─── Actions sidebar (bas) ───────────────────────────────────────────
 export const SIDEBAR_ACTIONS = [
+  { label: "Mon profil",     href: "/dashboard/profil", icon: UserCircle },
   { label: "Notifications", href: "#", icon: Bell },
   { label: "Déconnexion",   href: "/connexion", icon: LogOut },
 ] as const;

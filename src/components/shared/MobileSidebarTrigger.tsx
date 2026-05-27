@@ -38,6 +38,8 @@ function getSectionLabel(item: SidebarItem): string | null {
   if (item.href.startsWith("/dashboard/admin")) return "Administration";
   if (item.href.startsWith("/dashboard/reservations")) return "Réception";
   if (item.href.startsWith("/dashboard/clients")) return "Réception";
+  if (item.href.startsWith("/dashboard/check-in-out")) return "Réception";
+  if (item.href.startsWith("/dashboard/paiements")) return "Réception";
   if (item.href.startsWith("/dashboard/chambres")) return "Gestion";
   if (item.href.startsWith("/dashboard/personnel")) return "Gestion";
   if (item.href.startsWith("/dashboard/mon-hotel")) return "Établissement";

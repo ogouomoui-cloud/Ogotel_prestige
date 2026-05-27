@@ -1,44 +1,66 @@
-import { createServerClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
 import { redirect } from "next/navigation";
 import { DashboardSidebar } from "@/components/shared/DashboardSidebar";
 import { MobileSidebarTrigger } from "@/components/shared/MobileSidebarTrigger";
 import { DashboardRoleGuard } from "@/components/shared/DashboardRoleGuard";
-import type { UserProfile } from "@/types";
+import type { Role } from "@/lib/constants";
 
-export default async function DashboardLayout({
-  children,
-}: {
+type DashboardLayoutProps = {
   children: React.ReactNode;
-}) {
-  const supabase = await createServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+};
 
-  // ─── Garde d'accès : non connecté → redirection ────────────────
-  if (!user) redirect("/connexion");
+export default async function DashboardLayout({ children }: DashboardLayoutProps) {
+  // ─── Récupération sécurisée de l'utilisateur ────────────────────
+  let user: { id: string; email: string } | null = null;
+  let profile: {
+    full_name: string;
+    role: Role;
+    hotel_name?: string;
+  } | null = null;
 
-  // ─── Récupération du profil ─────────────────────────────────────
-  let profile: UserProfile | null = null;
   try {
+    const { createServerClient } = await import("@/lib/supabase/server");
+    const supabase = await createServerClient();
+    const { data } = await supabase.auth.getUser();
+
+    if (data.user) {
+      user = { id: data.user.id, email: data.user.email ?? "" };
+    }
+  } catch (err) {
+    console.error("[Dashboard Layout] Erreur Supabase auth:", err);
+  }
+
+  // ─── Non connecté → redirection ──────────────────────────────────
+  if (!user) {
+    redirect("/connexion");
+  }
+
+  // ─── Récupération du profil (tolérant aux erreurs) ──────────────
+  try {
+    const { createAdminClient } = await import("@/lib/supabase/admin");
     const admin = createAdminClient();
     const { data } = await admin
       .from("profiles")
       .select("*, hotels(name)")
       .eq("id", user.id)
       .single();
-    profile = data as UserProfile & { hotels?: { name: string } } | null;
-  } catch {
-    // Profil non trouvé — la table n'existe peut-être pas encore
+
+    if (data) {
+      profile = {
+        full_name: data.full_name ?? "",
+        role: data.role,
+        hotel_name: (data as any)?.hotels?.name,
+      };
+    }
+  } catch (err) {
+    console.error("[Dashboard Layout] Erreur chargement profil:", err);
   }
 
-  const userRole = profile?.role ?? "receptionist";
-  const fullName = profile?.full_name ?? user.email ?? "";
-  const hotelName = (profile as any)?.hotels?.name;
+  // ─── Valeurs par défaut ─────────────────────────────────────────
+  const userRole: Role = profile?.role ?? "receptionist";
+  const fullName = profile?.full_name || user.email || "Utilisateur";
+  const hotelName = profile?.hotel_name;
   const initial = fullName.charAt(0).toUpperCase();
 
-  // ─── Label du rôle pour l'en-tête ──────────────────────────────
   const roleLabel =
     userRole === "super_admin"
       ? "Super Administrateur"

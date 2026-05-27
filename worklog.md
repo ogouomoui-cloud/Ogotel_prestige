@@ -156,3 +156,39 @@ Stage Summary:
 - Check-in/check-out with confirmation dialogs and automatic room status update
 - Payment recording with remaining balance display
 - Fast reception-focused UX with big action buttons
+---
+Task ID: security-ux-polish
+Agent: main
+Task: Finaliser sécurité, robustesse et UX — garde rôles, 404, loading/error, navigation propre
+
+Work Log:
+- Créé `src/middleware.ts` — Middleware Next.js pour protéger les routes /dashboard/* (redirect vers /connexion si non connecté)
+- Amélioré `src/lib/supabase/middleware.ts` — Fallback graceful si Supabase non configuré, try/catch sur getUser()
+- Créé `src/app/not-found.tsx` — Page 404 premium pour le site public (avec branding OGOTEL)
+- Créé `src/app/(dashboard)/dashboard/not-found.tsx` — Page 404 pour le dashboard
+- Créé `src/components/shared/AccessDenied.tsx` — Composant d'accès refusé avec détails des rôles (required + current)
+- Créé `src/components/shared/DashboardRoleGuard.tsx` — Garde de rôle côté client pour toutes les routes dashboard (admin→super_admin, personnel→hotel_admin, mon-hotel→hotel_admin/manager, chambres→hotel_admin/manager)
+- Créé `src/components/shared/RoleGuard.tsx` — Hook et composant de garde réutilisable
+- Corrigé `src/lib/constants/navigation.ts` — Supprimé 3 liens cassés (facturation, statistiques, parametres) + nettoyé les rôles super_admin des items réception
+- Refondu `src/components/shared/DashboardSidebar.tsx` — Sidebar avec sections visuelles (Administration, Réception, Gestion, Établissement) + icônes de section + séparateurs
+- Refondu `src/components/shared/MobileSidebarTrigger.tsx` — Même logique de sections pour le menu mobile
+- Créé `src/components/shared/PageLoading.tsx` — 3 variantes: PageLoading, ListLoading, DetailLoading
+- Créé `src/components/shared/PageError.tsx` — Composant d'erreur standard avec retry
+- Créé `src/components/shared/Breadcrumb.tsx` — Fil d'Ariane automatique avec map de labels français
+- Créé `src/app/(dashboard)/loading.tsx` — Loading pour le layout dashboard
+- Créé `src/app/(dashboard)/error.tsx` — Error boundary pour le layout dashboard
+- Créé 18 fichiers `loading.tsx` pour toutes les routes dashboard (listes → ListLoading, détails → DetailLoading)
+- Modifié `src/app/(dashboard)/layout.tsx` — Intégré DashboardRoleGuard, nettoyé le code, ajouté du responsive
+- Ajouté garde sécurité runtime dans `src/lib/supabase/admin.ts` — Throw si createAdminClient() appelé côté navigateur
+- Supprimé la ré-export de createAdminClient dans `src/lib/supabase/index.ts`
+- Audit sécurité complet: 38 fichiers audités, SERVICE_ROLE_KEY jamais côté client
+
+Stage Summary:
+- 36 fichiers modifiés/créés (1015 insertions, 104 suppressions)
+- Middleware Next.js fonctionnel avec protection des routes dashboard
+- Pages 404 public + dashboard
+- Garde de rôle client-side sur toutes les routes protégées
+- Navigation propre sans liens cassés, organisée par sections
+- 20 fichiers loading/error pour UX cohérente
+- Sécurité SERVICE_ROLE_KEY validée (garde runtime + suppression barrel export)
+- Lint: 0 erreurs

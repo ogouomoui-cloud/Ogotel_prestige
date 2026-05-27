@@ -192,3 +192,54 @@ Stage Summary:
 - 20 fichiers loading/error pour UX cohérente
 - Sécurité SERVICE_ROLE_KEY validée (garde runtime + suppression barrel export)
 - Lint: 0 erreurs
+
+---
+Task ID: fix-build-config
+Agent: build config agent
+Task: Fix build configuration and environment for Vercel deployment
+
+Work Log:
+- Removed unused `eslint-disable-next-line @typescript-eslint/no-explicit-any` directive in `src/lib/supabase/middleware.ts` line 56
+- Created `.env.example` at project root with documented environment variables (NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY, DATABASE_URL)
+- Created `vercel.json` at project root with framework set to `nextjs`
+- Updated `next.config.ts` — added `images: { unoptimized: true }` to handle image optimization without external service
+- Updated `package.json` scripts — simplified `build` to `next build` for Vercel, moved standalone copy commands to `build:standalone`
+- Lint passes clean (0 errors, 0 warnings)
+
+Stage Summary:
+- Project configuration ready for Vercel deployment
+- 2 new files: `.env.example`, `vercel.json`
+- 2 modified files: `next.config.ts`, `package.json`
+- 1 modified file: `src/lib/supabase/middleware.ts` (eslint fix)
+
+---
+Task ID: fix-login-ux
+Agent: frontend agent
+Task: Fix login page UX with proper setup flow detection
+
+Work Log:
+- Rewrote `src/app/(public)/connexion/page.tsx` with full setup state machine
+- Introduced `SetupStep` type union: `"loading" | "env" | "schema" | "create_admin" | "login" | "unknown"`
+- Page now calls `GET /api/setup/init` on mount to determine current setup state
+- Loading state shows spinning Loader2 with "Vérification de la configuration…" text
+- `env` state: full-page message with Settings icon explaining Supabase needs configuration, CTA to `/installer`
+- `schema` state: full-page message with Database icon explaining schema needs deployment, CTA to `/installer`
+- `create_admin` state: full-page message with UserPlus icon prompting to create super admin, CTA to `/installer`
+- `unknown` state: generic error message with AlertCircle icon, CTA to `/installer`
+- `login` state: shows the full login form (email/password) with OGOTEL branding
+- Added subtle badge "Connectez-vous avec vos identifiants super administrateur" above the form
+- Removed the old yellow AlertTriangle banner — setup states now take over the entire card area
+- Used `AnimatePresence mode="wait"` for smooth transitions between states
+- Kept all existing features: "Mot de passe oublié ?" placeholder, Google social login placeholder, "Demander un essai" link
+- Used react-hook-form + zod for login form validation
+- Used framer-motion for animations, shadcn/ui components (Button, Input, Form)
+- Fully responsive mobile-first design with premium OGOTEL navy/gold palette
+- Lint passes clean (0 errors)
+
+Stage Summary:
+- 1 file rewritten: `src/app/(public)/connexion/page.tsx`
+- Login page now properly handles all 5 setup states with clear user guidance
+- Users are guided to `/installer` when setup is incomplete (env, schema, create_admin)
+- Login form only shown when everything is ready (step === "login")
+- Network errors handled gracefully with "unknown" fallback state
+- Prevents crash when Supabase is not configured (no more non-null assertion on undefined env vars)

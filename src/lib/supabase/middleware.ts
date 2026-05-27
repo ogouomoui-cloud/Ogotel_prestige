@@ -53,7 +53,6 @@ export async function updateSession(request: NextRequest) {
   });
 
   // ─── Récupération de l'utilisateur ──────────────────────────────
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Supabase User type inference issue with try/catch
   let user: any = null;
   try {
     const { data } = await supabase.auth.getUser();

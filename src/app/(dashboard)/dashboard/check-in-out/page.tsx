@@ -201,6 +201,8 @@ export default function CheckInOutPage() {
     return true;
   });
 
+  const hasFilters = () => search.length > 0 || tabFilter !== "all";
+
   // ─── Compteurs ───────────────────────────────────────────────────
   const checkinCount = reservations.filter((r) => r.status === "confirmee").length;
   const checkoutCount = reservations.filter((r) => r.status === "en_cours").length;
@@ -579,9 +581,6 @@ export default function CheckInOutPage() {
     </motion.div>
   );
 }
-
-// ─── Helper ────────────────────────────────────────────────────────────
-// (hasFilters is evaluated inline in the component)
 
 // ─── Desktop Row ───────────────────────────────────────────────────────
 function CheckInOutRow({

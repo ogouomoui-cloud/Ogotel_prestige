@@ -144,3 +144,36 @@ Stage Summary:
   - Mot de passe oublié non implémenté
   - Dépendances inutilisées dans package.json (next-auth, next-intl, etc.)
   - Pas de middleware.ts (auth gérée par layout serveur)
+
+---
+Task ID: activation-system-premium
+Agent: Main Coordinator
+Task: Système d'activation par code — UX premium multi-étapes
+
+Work Log:
+- Analysé l'existant : page basique mono-formulaire, API sans infos hôtel
+- Créé GET /api/auth/verify-code : vérification code côté serveur (lecture seule)
+  - Jointures hotels + plans pour afficher le contexte
+  - Détection : code invalide (404), expiré (410), déjà utilisé (410), annulé (410), admin existe (409)
+  - Auto-marquage des codes expirés
+- Réécrit POST /api/auth/activate :
+  - Validation Zod renforcée (majuscule + chiffre dans mdp)
+  - Traduction erreurs Supabase en français
+  - Réponse enrichie avec hôtel + plan
+  - Rollback utilisateur si profil échoue
+- Réécrit page /activer en multi-étapes premium :
+  - Step indicator visuel (3 étapes)
+  - Étape 1 : saisie code formaté XXXX-XXXX-XXXX
+  - Étape 2 : carte gradient hôtel + grille métriques + formulaire compte
+  - Indicateur de force de mot de passe (3 barres)
+  - Étape 3 : page succès avec récapitulatif + redirection connexion
+  - Animations slide Framer Motion entre étapes
+  - Lien WhatsApp support dans footer et aide
+- ESLint : 0 erreurs
+- Commit : 7ecd484
+
+Stage Summary:
+- 3 fichiers modifiés/créés, 991 insertions, 185 suppressions
+- Flow complet fonctionnel : code → vérification → création → succès → connexion
+- Sécurité : toute vérification côté serveur, aucun RLS bypass côté client
+- UX débutant : instructions claires, erreurs en français, boutons retour/aide

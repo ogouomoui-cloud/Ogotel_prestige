@@ -93,17 +93,20 @@ export async function GET() {
       const recentReservations = recentRes.data || [];
       const rooms = roomsRes.data || [];
 
-      // Répartition des chambres par type
-      const roomBreakdown: Record<string, { total: number; statuses: Record<string, number> }> = {};
+      // Répartition des chambres par type (format plat compatible dashboard)
+      const roomBreakdown: Record<string, Record<string, number>> = {};
       for (const room of rooms) {
         const type = room.room_type;
-        if (!roomBreakdown[type]) {
-          roomBreakdown[type] = { total: 0, statuses: {} };
-        }
-        roomBreakdown[type].total += 1;
         const status = room.status;
-        roomBreakdown[type].statuses[status] =
-          (roomBreakdown[type].statuses[status] || 0) + 1;
+        if (!roomBreakdown[type]) {
+          roomBreakdown[type] = {
+            disponible: 0,
+            occupee: 0,
+            maintenance: 0,
+            reservee: 0,
+          };
+        }
+        roomBreakdown[type][status] = (roomBreakdown[type][status] || 0) + 1;
       }
 
       return NextResponse.json(

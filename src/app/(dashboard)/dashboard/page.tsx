@@ -28,7 +28,6 @@ import {
   Clock,
   CheckCircle2,
   XCircle,
-  Moon,
 } from "lucide-react";
 import { ROLE_LABELS, ROLE_COLORS } from "@/lib/constants/roles";
 import {

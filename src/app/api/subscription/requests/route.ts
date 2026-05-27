@@ -63,7 +63,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    return NextResponse.json({ data: requests }, { status: 200 });
+    return NextResponse.json({ requests }, { status: 200 });
   } catch (error) {
     console.error("Erreur demandes d'abonnement:", error);
     return NextResponse.json(

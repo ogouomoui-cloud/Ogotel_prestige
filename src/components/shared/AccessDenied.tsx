@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import { ShieldX, Home, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -63,15 +65,12 @@ export function AccessDenied({
           </Link>
         </Button>
         <Button
-          asChild
           variant="outline"
           className="rounded-xl border-border hover:bg-ivory"
-          onClick={() => typeof window !== "undefined" && window.history.back()}
+          onClick={() => window.history.back()}
         >
-          <Link href="javascript:void(0)" onClick={() => typeof window !== "undefined" && window.history.back()}>
             <ArrowLeft className="mr-2 h-4 w-4" />
             Retour
-          </Link>
         </Button>
       </div>
     </div>

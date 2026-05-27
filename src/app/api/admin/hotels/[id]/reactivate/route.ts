@@ -79,13 +79,13 @@ export async function POST(
     }
 
     // ─── Réactiver les utilisateurs de l'hôtel ───────────────
-    // On ne réactive que les utilisateurs qui étaient actifs
-    // (ceux dont le rôle n'est pas 'invited' et qui n'ont pas été
-    // individuellement désactivés avant la suspension)
+    // On ne réactive que les utilisateurs dont le rôle est valide
+    // (on exclut ceux individuellement désactivés = invited)
     await admin
       .from("profiles")
       .update({ is_active: true })
-      .eq("hotel_id", id);
+      .eq("hotel_id", id)
+      .neq("role", "invited");
 
     // ─── Journaliser l'action ────────────────────────────────
     await admin.from("activity_logs").insert({

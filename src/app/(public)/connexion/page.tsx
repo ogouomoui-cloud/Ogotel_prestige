@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
@@ -8,6 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
+import { AlertTriangle, ExternalLink } from "lucide-react";
 import { signInWithEmail } from "@/lib/auth/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -35,6 +36,22 @@ type LoginValues = z.infer<typeof loginSchema>;
 export default function ConnexionPage() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const [setupNeeded, setSetupNeeded] = useState<boolean | null>(null);
+
+  // ─── Vérifier si l'app est initialisée ──────────────────────────
+  useEffect(() => {
+    async function checkSetup() {
+      try {
+        const res = await fetch("/api/setup/init");
+        if (!res.ok) return;
+        const data = await res.json();
+        setSetupNeeded(data.step === "env" || data.step === "schema");
+      } catch {
+        // Silently fail
+      }
+    }
+    checkSetup();
+  }, []);
 
   const form = useForm<LoginValues>({
     resolver: zodResolver(loginSchema),
@@ -88,6 +105,35 @@ export default function ConnexionPage() {
               Accédez au tableau de bord de votre établissement.
             </p>
           </div>
+
+          {/* Banner setup */}
+          {setupNeeded && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              className="mb-6 rounded-lg bg-amber-50 border border-amber-200 p-4 space-y-3"
+            >
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-semibold text-amber-800">
+                    Configuration requise
+                  </p>
+                  <p className="text-sm text-amber-700 mt-1">
+                    Supabase n&apos;est pas encore configuré ou la base de données n&apos;est pas installée.
+                    Suivez le guide d&apos;initialisation pour configurer votre plateforme.
+                  </p>
+                  <Link
+                    href="/installer"
+                    className="mt-2 inline-flex items-center gap-1.5 text-sm font-semibold text-amber-800 hover:text-amber-900 hover:underline"
+                  >
+                    Guide d&apos;initialisation
+                    <ExternalLink className="h-3.5 w-3.5" />
+                  </Link>
+                </div>
+              </div>
+            </motion.div>
+          )}
 
           {/* Form */}
           <Form {...form}>

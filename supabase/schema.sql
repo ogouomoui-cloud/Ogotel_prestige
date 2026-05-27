@@ -56,6 +56,7 @@ DROP TYPE IF EXISTS payment_status       CASCADE;
 DROP TYPE IF EXISTS payment_method        CASCADE;
 DROP TYPE IF EXISTS reservation_status   CASCADE;
 DROP TYPE IF EXISTS room_status          CASCADE;
+DROP TYPE IF EXISTS room_status_old         CASCADE;
 DROP TYPE IF EXISTS room_type            CASCADE;
 DROP TYPE IF EXISTS code_status          CASCADE;
 DROP TYPE IF EXISTS request_status       CASCADE;
@@ -115,7 +116,8 @@ CREATE TYPE room_status AS ENUM (
   'disponible',
   'occupee',
   'maintenance',
-  'reservee'
+  'reservee',
+  'nettoyage'
 );
 
 CREATE TYPE reservation_status AS ENUM (

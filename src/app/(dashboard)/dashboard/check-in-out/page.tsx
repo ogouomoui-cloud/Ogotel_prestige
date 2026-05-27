@@ -581,9 +581,7 @@ export default function CheckInOutPage() {
 }
 
 // ─── Helper ────────────────────────────────────────────────────────────
-function hasFilters(): boolean {
-  return false; // Will be set by parent scope
-}
+// (hasFilters is evaluated inline in the component)
 
 // ─── Desktop Row ───────────────────────────────────────────────────────
 function CheckInOutRow({

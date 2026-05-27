@@ -61,3 +61,98 @@ Stage Summary:
 - Subscription quota enforcement for max rooms
 - Activity logging for create/update/delete operations
 - Premium design with Framer Motion, responsive desktop table + mobile cards
+
+---
+Task ID: 2-c
+Agent: full-stack-developer
+Task: Create Payments API route
+
+Work Log:
+- Created `/api/hotel-admin/payments` — GET (list with filters) + POST (create with auto-update reservation paid_amount)
+- Payment creation updates reservation.paid_amount atomically
+- Overpayment detection (warns but accepts)
+- verifyHotelAccess allows hotel_admin, manager, receptionist
+- Multi-tenant isolation via hotel_id
+
+Stage Summary:
+- 1 API route file created
+- Payment recording with automatic reservation balance update
+
+---
+Task ID: 2-a
+Agent: full-stack-developer
+Task: Create Client management API routes
+
+Work Log:
+- Created `/api/hotel-admin/clients/route.ts` — GET (list/search/paginate with is_vip filter) + POST (create with Zod validation + activity logging)
+- Created `/api/hotel-admin/clients/[id]/route.ts` — GET (detail with reservation count, total spent, total nights stats) + PUT (update with Zod validation + activity logging)
+- verifyHotelAccess allows hotel_admin, manager, receptionist (broader access for reception module)
+- Multi-tenant isolation via hotel_id on every query
+- Activity logging for create/update operations with changed field tracking
+- Pagination support (page, limit params) on list endpoint
+
+Stage Summary:
+- 2 API route files created
+- Full CRUD for guests with search by name/phone/email, VIP filtering, pagination
+- Guest detail includes reservation count, total spending, total nights stats
+- All queries filtered by hotel_id for multi-tenant security
+
+---
+Task ID: 2-b
+Agent: full-stack-developer
+Task: Create Reservation management API routes (list, create, detail, update, check-in, check-out)
+
+Work Log:
+- Created /api/hotel-admin/reservations — GET (list with search/filters/status_counts) + POST (create with auto-calc nights, amount, deposit 30%)
+- Created /api/hotel-admin/reservations/[id] — GET (detail with room+guest joins + payments) + PUT (update with room reassignment, cancellation, date recalc)
+- Created /api/hotel-admin/reservations/[id]/checkin — PATCH (check-in: reservation→en_cours, room→occupee)
+- Created /api/hotel-admin/reservations/[id]/checkout — PATCH (check-out: reservation→terminee, room→nettoyage)
+- Auto-calculates: number_of_nights, total_amount, deposit_required (30%)
+- Room status auto-updates on create (→reservee), check-in (→occupee), checkout (→nettoyage), cancellation (→disponible)
+- Room reassignment handles old room release + new room reservation
+- verifyHotelAccess allows hotel_admin, manager, receptionist
+- Multi-tenant isolation via hotel_id on every query
+- Zod validation on POST and PUT endpoints
+- Activity logging for all mutations (create, update, check-in, check-out)
+- Lint passes clean
+
+Stage Summary:
+- 4 API route files created
+- Complete reservation lifecycle: create → confirm → check-in → check-out → archive
+- Room status automatically synced with reservation status
+- Search by guest name, room number, guest full name
+- Filter by status, room_type, date range
+
+---
+Task ID: 3-a
+Agent: full-stack-developer
+Task: Create Client management frontend pages
+
+Work Log:
+- Created /dashboard/clients/page.tsx — Client list with search, VIP filter, desktop table, mobile cards
+- Created /dashboard/clients/creer/page.tsx — Create client form with react-hook-form + Zod
+- Created /dashboard/clients/[id]/page.tsx — Client detail with stats cards, edit dialog, recent reservations
+- Lint passes clean
+
+Stage Summary:
+- 3 page components created
+- Client list with search by name/phone/email and VIP filter
+- Client detail shows reservation stats, edit capability, recent stay history
+
+---
+Task ID: 3-b
+Agent: full-stack-developer
+Task: Create Reservation management frontend pages
+
+Work Log:
+- Created /dashboard/reservations/page.tsx — Reservation list with status chips, search, filters, desktop table, mobile cards
+- Created /dashboard/reservations/creer/page.tsx — Create reservation form with client search, auto-calc totals, room picker
+- Created /dashboard/reservations/[id]/page.tsx — Reservation detail with check-in/check-out buttons, payment recording, status timeline
+- Lint passes clean
+
+Stage Summary:
+- 3 page components created
+- Complete reservation lifecycle UI: create → view → check-in → check-out
+- Check-in/check-out with confirmation dialogs and automatic room status update
+- Payment recording with remaining balance display
+- Fast reception-focused UX with big action buttons

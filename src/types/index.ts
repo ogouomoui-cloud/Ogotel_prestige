@@ -120,7 +120,7 @@ export interface ActivationCode {
 
 // ─── Chambres ────────────────────────────────────────────────────
 export type RoomType = "standard" | "deluxe" | "suite" | "presidentielle";
-export type RoomStatus = "disponible" | "occupee" | "maintenance" | "reservee";
+export type RoomStatus = "disponible" | "occupee" | "maintenance" | "reservee" | "nettoyage";
 
 export interface Room {
   id: string;
@@ -285,6 +285,7 @@ export const ROOM_STATUS_LABELS: Record<RoomStatus, string> = {
   occupee: "Occupée",
   maintenance: "Maintenance",
   reservee: "Réservée",
+  nettoyage: "Nettoyage",
 };
 
 export const RESERVATION_STATUS_LABELS: Record<ReservationStatus, string> = {

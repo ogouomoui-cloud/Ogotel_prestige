@@ -38,3 +38,26 @@ Stage Summary:
 - `src/lib/constants/navigation.ts` — Updated (removed duplicate nav entry)
 - Design: Navy/Gold premium palette, Framer Motion animations, mobile-responsive
 - All French interface, FCFA currency formatting
+
+---
+Task ID: 9
+Agent: main
+Task: Build room management module (chambres) — CRUD, filters, quota
+
+Work Log:
+- Updated `src/types/index.ts` — Added "nettoyage" to RoomStatus type and ROOM_STATUS_LABELS
+- Created `src/app/api/hotel-admin/rooms/route.ts` — GET (list with search/status/type/floor filters + quota + status_counts) and POST (create with quota check + duplicate number check + activity logging)
+- Created `src/app/api/hotel-admin/rooms/[id]/route.ts` — GET (single room), PUT (update with duplicate check + activity logging), DELETE (soft delete with active reservation check)
+- Created `src/app/(dashboard)/dashboard/chambres/page.tsx` — Room list page with: quota banner, status summary chips, search bar, filter panel (type/status), desktop table, mobile card grid, delete confirmation dialog
+- Created `src/app/(dashboard)/dashboard/chambres/creer/page.tsx` — Create room form with: room info, pricing, 12 amenity toggles with icons, description, Zod validation
+- Created `src/app/(dashboard)/dashboard/chambres/[id]/modifier/page.tsx` — Edit room form with: pre-filled data, same amenity toggles, Zod validation
+- All API routes enforce hotel_admin/manager role + hotel_id filtering for multi-tenant isolation
+- Lint passes clean
+
+Stage Summary:
+- 3 new files: 2 API routes, 3 page components
+- 1 modified file: `src/types/index.ts` (added "nettoyage" status)
+- Full CRUD with soft delete, search, filtering by status/type
+- Subscription quota enforcement for max rooms
+- Activity logging for create/update/delete operations
+- Premium design with Framer Motion, responsive desktop table + mobile cards

@@ -49,7 +49,7 @@ export const DASHBOARD_NAV: SidebarItem[] = [
     label: "Vue d'ensemble",
     href: "/dashboard",
     icon: LayoutDashboard,
-    roles: ["super_admin", "hotel_admin", "manager", "receptionist"],
+    roles: ["super_admin"],
   },
   {
     label: "Demandes",
@@ -78,7 +78,7 @@ export const DASHBOARD_NAV: SidebarItem[] = [
   // ─── Hôtel Admin / Manager / Réceptionnist ────────────────────
   {
     label: "Tableau de bord",
-    href: "/dashboard/hotel",
+    href: "/dashboard",
     icon: LayoutDashboard,
     roles: ["hotel_admin", "manager", "receptionist"],
   },

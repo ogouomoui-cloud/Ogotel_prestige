@@ -4,9 +4,7 @@ import {
   BedDouble,
   Users,
   CalendarCheck,
-  Receipt,
-  BarChart3,
-  Settings,
+  Wallet,
   ShieldCheck,
   Building2,
   LogOut,
@@ -75,7 +73,7 @@ export const DASHBOARD_NAV: SidebarItem[] = [
     icon: ScrollText,
     roles: ["super_admin"],
   },
-  // ─── Hôtel Admin / Manager / Réceptionnist ────────────────────
+  // ─── Hôtel Admin / Manager / Réceptionniste ───────────────────
   {
     label: "Tableau de bord",
     href: "/dashboard",
@@ -86,49 +84,31 @@ export const DASHBOARD_NAV: SidebarItem[] = [
     label: "Réservations",
     href: "/dashboard/reservations",
     icon: CalendarCheck,
-    roles: ["super_admin", "hotel_admin", "manager", "receptionist"],
+    roles: ["hotel_admin", "manager", "receptionist"],
   },
   {
     label: "Chambres",
     href: "/dashboard/chambres",
     icon: BedDouble,
-    roles: ["super_admin", "hotel_admin", "manager"],
+    roles: ["hotel_admin", "manager"],
   },
   {
     label: "Clients",
     href: "/dashboard/clients",
     icon: Users,
-    roles: ["super_admin", "hotel_admin", "manager", "receptionist"],
-  },
-  {
-    label: "Facturation",
-    href: "/dashboard/facturation",
-    icon: Receipt,
-    roles: ["super_admin", "hotel_admin", "manager"],
+    roles: ["hotel_admin", "manager", "receptionist"],
   },
   {
     label: "Personnel",
     href: "/dashboard/personnel",
     icon: UserCircle,
-    roles: ["super_admin", "hotel_admin"],
+    roles: ["hotel_admin"],
   },
   {
     label: "Mon hôtel",
     href: "/dashboard/mon-hotel",
     icon: Hotel,
     roles: ["hotel_admin", "manager"],
-  },
-  {
-    label: "Statistiques",
-    href: "/dashboard/statistiques",
-    icon: BarChart3,
-    roles: ["super_admin", "hotel_admin"],
-  },
-  {
-    label: "Paramètres",
-    href: "/dashboard/parametres",
-    icon: Settings,
-    roles: ["super_admin", "hotel_admin"],
   },
 ];
 

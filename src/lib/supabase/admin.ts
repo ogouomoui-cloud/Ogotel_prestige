@@ -23,5 +23,13 @@ export function createAdminClient() {
     );
   }
 
+  // ─── Garde de sécurité : interdire l'utilisation côté client ────
+  if (typeof window !== "undefined") {
+    throw new Error(
+      "[SECURITY] createAdminClient() ne peut PAS être appelé côté navigateur. " +
+      "Utilisez createBrowserClient() à la place."
+    );
+  }
+
   return createSupabaseClient(url, key);
 }

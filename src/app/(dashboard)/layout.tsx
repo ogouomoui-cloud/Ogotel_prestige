@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { redirect } from "next/navigation";
 import { DashboardSidebar } from "@/components/shared/DashboardSidebar";
 import { MobileSidebarTrigger } from "@/components/shared/MobileSidebarTrigger";
+import { DashboardRoleGuard } from "@/components/shared/DashboardRoleGuard";
 import type { UserProfile } from "@/types";
 
 export default async function DashboardLayout({
@@ -32,22 +33,37 @@ export default async function DashboardLayout({
     // Profil non trouvé — la table n'existe peut-être pas encore
   }
 
+  const userRole = profile?.role ?? "receptionist";
+  const fullName = profile?.full_name ?? user.email ?? "";
+  const hotelName = (profile as any)?.hotels?.name;
+  const initial = fullName.charAt(0).toUpperCase();
+
+  // ─── Label du rôle pour l'en-tête ──────────────────────────────
+  const roleLabel =
+    userRole === "super_admin"
+      ? "Super Administrateur"
+      : userRole === "hotel_admin"
+        ? `Admin — ${hotelName ?? ""}`
+        : userRole === "manager"
+          ? "Manager"
+          : "Réceptionniste";
+
   // ─── Rendu du layout ────────────────────────────────────────────
   return (
     <div className="flex h-screen bg-background">
       <DashboardSidebar
         profile={{
-          full_name: profile?.full_name ?? user.email ?? "",
-          role: profile?.role ?? "receptionist",
-          hotel_name: (profile as any)?.hotels?.name,
+          full_name: fullName,
+          role: userRole,
+          hotel_name: hotelName,
         }}
       />
       <div className="flex flex-1 flex-col overflow-hidden">
         {/* Barre supérieure */}
-        <header className="flex h-16 items-center gap-4 border-b border-border bg-white/80 px-4 backdrop-blur-md lg:px-6">
+        <header className="flex h-16 shrink-0 items-center gap-4 border-b border-border bg-white/80 px-4 backdrop-blur-md lg:px-6">
           <MobileSidebarTrigger
             profile={{
-              role: profile?.role ?? "receptionist",
+              role: userRole,
             }}
           />
           <div className="flex flex-col">
@@ -58,21 +74,11 @@ export default async function DashboardLayout({
           {/* Infos utilisateur (desktop) */}
           <div className="ml-auto hidden items-center gap-3 lg:flex">
             <div className="text-right">
-              <p className="text-sm font-medium text-navy">
-                {profile?.full_name ?? user.email}
-              </p>
-              <p className="text-xs text-slate">
-                {profile?.role === "super_admin"
-                  ? "Super Administrateur"
-                  : profile?.role === "hotel_admin"
-                    ? "Admin — " + ((profile as any)?.hotels?.name ?? "")
-                    : profile?.role === "manager"
-                      ? "Manager"
-                      : "Réceptionniste"}
-              </p>
+              <p className="text-sm font-medium text-navy">{fullName}</p>
+              <p className="text-xs text-slate">{roleLabel}</p>
             </div>
             <div className="flex h-9 w-9 items-center justify-center rounded-full bg-navy text-sm font-semibold text-ivory">
-              {(profile?.full_name ?? user.email ?? "U").charAt(0).toUpperCase()}
+              {initial}
             </div>
           </div>
         </header>
@@ -80,7 +86,9 @@ export default async function DashboardLayout({
         {/* Zone principale */}
         <main className="flex-1 overflow-y-auto">
           <div className="mx-auto max-w-7xl p-4 sm:p-6 lg:p-8">
-            {children}
+            <DashboardRoleGuard userRole={userRole}>
+              {children}
+            </DashboardRoleGuard>
           </div>
         </main>
       </div>

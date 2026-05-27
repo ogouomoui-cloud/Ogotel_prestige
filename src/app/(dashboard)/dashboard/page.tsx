@@ -1,159 +1,215 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { getUser } from "@/lib/auth/client";
-import { onAuthStateChange } from "@/lib/auth/client";
+import { motion } from "framer-motion";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  ShieldCheck,
-  LogOut,
-  RefreshCw,
-  AlertTriangle,
-  CheckCircle2,
-  User,
   Building2,
-  Key,
+  FileText,
+  CreditCard,
+  Users,
+  ArrowRight,
+  AlertTriangle,
+  Activity,
 } from "lucide-react";
+import { ROLE_LABELS, ROLE_COLORS } from "@/lib/constants/roles";
 import type { Role } from "@/lib/constants";
+import {
+  ACTIVITY_ACTION_LABELS,
+  type ActivityAction,
+  type ActivityLog,
+} from "@/types";
 
-// ─── Badge de couleur par rôle ─────────────────────────────────────────
-const ROLE_STYLES: Record<Role, string> = {
-  super_admin: "bg-red-100 text-red-800 border-red-200",
-  hotel_admin: "bg-navy/10 text-navy border-navy/20",
-  manager: "bg-gold/15 text-gold-dark border-gold/30",
-  receptionist: "bg-emerald-100 text-emerald-800 border-emerald-200",
+// ─── Types ──────────────────────────────────────────────────────────────
+interface SuperAdminStats {
+  role: "super_admin";
+  full_name: string;
+  hotels: number;
+  active_hotels?: number;
+  pending_requests: number;
+  active_subscriptions: number;
+  total_users: number;
+  recent_activity: ActivityLog[];
+}
+
+interface OtherStats {
+  role: string;
+  full_name: string;
+  message?: string;
+}
+
+// ─── Helpers ────────────────────────────────────────────────────────────
+function formatDate(date: string): string {
+  return new Date(date).toLocaleDateString("fr-FR", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function getRelativeTime(date: string): string {
+  const now = new Date();
+  const then = new Date(date);
+  const diffMs = now.getTime() - then.getTime();
+  const diffMin = Math.floor(diffMs / 60000);
+  const diffH = Math.floor(diffMs / 3600000);
+  const diffD = Math.floor(diffMs / 86400000);
+
+  if (diffMin < 1) return "À l'instant";
+  if (diffMin < 60) return `il y a ${diffMin}min`;
+  if (diffH < 24) return `il y a ${diffH}h`;
+  if (diffD < 7) return `il y a ${diffD}j`;
+  return formatDate(date);
+}
+
+function getActionIcon(action: ActivityAction) {
+  switch (action) {
+    case "create":
+      return "✨";
+    case "update":
+      return "✏️";
+    case "delete":
+      return "🗑️";
+    case "login":
+      return "🔑";
+    case "logout":
+      return "🚪";
+    case "approve":
+      return "✅";
+    case "reject":
+      return "❌";
+    case "activate":
+      return "⚡";
+    case "export":
+      return "📤";
+    default:
+      return "📌";
+  }
+}
+
+// ─── KPI Card config ────────────────────────────────────────────────────
+const KPIS = [
+  {
+    key: "hotels",
+    label: "Hôtels",
+    icon: Building2,
+    border: "border-l-emerald-500",
+    bg: "bg-emerald-50",
+    iconColor: "text-emerald-600",
+  },
+  {
+    key: "pending_requests",
+    label: "Demandes en attente",
+    icon: FileText,
+    border: "border-l-amber-500",
+    bg: "bg-amber-50",
+    iconColor: "text-amber-600",
+  },
+  {
+    key: "active_subscriptions",
+    label: "Abonnements actifs",
+    icon: CreditCard,
+    border: "border-l-blue-500",
+    bg: "bg-blue-50",
+    iconColor: "text-blue-600",
+  },
+  {
+    key: "total_users",
+    label: "Utilisateurs",
+    icon: Users,
+    border: "border-l-purple-500",
+    bg: "bg-purple-50",
+    iconColor: "text-purple-600",
+  },
+] as const;
+
+// ─── Animation variants ─────────────────────────────────────────────────
+const container = {
+  hidden: { opacity: 0 },
+  show: { opacity: 1, transition: { staggerChildren: 0.08 } },
+};
+const item = {
+  hidden: { opacity: 0, y: 20 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.4 } },
 };
 
-const ROLE_LABELS: Record<Role, string> = {
-  super_admin: "Super Administrateur",
-  hotel_admin: "Administrateur d'hôtel",
-  manager: "Manager",
-  receptionist: "Réceptionniste",
-};
-
-// ─── Composant principal ────────────────────────────────────────────────
-
+// ─── Component ──────────────────────────────────────────────────────────
 export default function DashboardPage() {
   const router = useRouter();
-
-  const [authenticated, setAuthenticated] = useState<boolean | null>(null);
+  const [stats, setStats] = useState<SuperAdminStats | null>(null);
+  const [otherData, setOtherData] = useState<OtherStats | null>(null);
   const [loading, setLoading] = useState(true);
-  const [userEmail, setUserEmail] = useState<string | null>(null);
-  const [profileData, setProfileData] = useState<{
-    full_name: string;
-    role: Role;
-    hotel_name?: string;
-  } | null>(null);
-  const [dbConnected, setDbConnected] = useState<boolean | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  // ─── Charger l'état d'authentification ───────────────────────────
   useEffect(() => {
-    async function loadAuth() {
+    async function loadStats() {
       try {
-        const { user, session } = await getUser();
-        setAuthenticated(!!session);
-
-        if (user) {
-          setUserEmail(user.email ?? null);
-
-          // Tenter de récupérer le profil depuis Supabase
-          const supabase = (await import("@/lib/supabase/client")).createBrowserClient();
-          const { data: profile, error } = await supabase
-            .from("profiles")
-            .select("full_name, role, hotels(name)")
-            .eq("id", user.id)
-            .single();
-
-          if (profile && !error) {
-            setProfileData({
-              full_name: profile.full_name,
-              role: profile.role,
-              hotel_name: (profile as any).hotels?.name,
-            });
-            setDbConnected(true);
-          } else {
-            setDbConnected(false);
-          }
+        const res = await fetch("/api/admin/stats");
+        if (!res.ok) {
+          // Fallback to dashboard/stats
+          const fallbackRes = await fetch("/api/dashboard/stats");
+          if (!fallbackRes.ok) throw new Error("Erreur de chargement");
+          const fallbackData = await fallbackRes.json();
+          setOtherData(fallbackData);
+          return;
         }
-      } catch {
-        setAuthenticated(false);
-        setDbConnected(null);
+        const data = await res.json();
+        if (data.role === "super_admin") {
+          setStats(data as SuperAdminStats);
+        } else {
+          setOtherData(data as OtherStats);
+        }
+      } catch (err) {
+        setError("Impossible de charger les données.");
+        toast.error("Erreur de chargement des statistiques");
       } finally {
         setLoading(false);
       }
     }
-    loadAuth();
-
-    // Observer les changements de session en temps réel
-    const unsubscribe = onAuthStateChange((session) => {
-      setAuthenticated(!!session);
-      if (!session) {
-        setUserEmail(null);
-        setProfileData(null);
-      }
-    });
-
-    return () => unsubscribe();
+    loadStats();
   }, []);
 
-  // ─── Actions ─────────────────────────────────────────────────────
-  async function handleRefresh() {
-    setLoading(true);
-    const { user, session } = await getUser();
-    setAuthenticated(!!session);
-    if (user) {
-      setUserEmail(user.email ?? null);
-    }
-    setLoading(false);
-  }
-
-  async function handleLogout() {
-    const { signOut } = await import("@/lib/auth/client");
-    await signOut();
-    router.push("/connexion");
-    router.refresh();
-  }
-
-  // ─── État de chargement ──────────────────────────────────────────
+  // ─── Loading ──────────────────────────────────────────────────────
   if (loading) {
     return (
       <div className="space-y-6">
         <Skeleton className="h-8 w-64" />
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {[...Array(3)].map((_, i) => (
-            <Skeleton key={i} className="h-40 rounded-xl" />
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {[...Array(4)].map((_, i) => (
+            <Skeleton key={i} className="h-32 rounded-xl" />
           ))}
         </div>
+        <Skeleton className="h-64 rounded-xl" />
       </div>
     );
   }
 
-  // ─── Non connecté (ne devrait pas arriver grâce au middleware) ───
-  if (!authenticated) {
+  // ─── Error ────────────────────────────────────────────────────────
+  if (error) {
     return (
-      <div className="flex min-h-[60vh] items-center justify-center">
+      <div className="flex min-h-[40vh] items-center justify-center">
         <Card className="w-full max-w-md text-center">
-          <CardHeader>
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-red-100">
+          <CardContent className="p-6">
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-100">
               <AlertTriangle className="h-8 w-8 text-red-600" />
             </div>
-            <CardTitle className="mt-4 text-xl text-navy">
-              Non connecté
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <p className="text-sm text-slate">
-              Vous devez être connecté pour accéder au tableau de bord.
-            </p>
+            <h2 className="text-lg font-semibold text-navy">
+              Erreur de chargement
+            </h2>
+            <p className="mt-2 text-sm text-slate">{error}</p>
             <Button
-              onClick={() => router.push("/connexion")}
-              className="w-full bg-navy text-ivory hover:bg-navy-light"
+              onClick={() => window.location.reload()}
+              className="mt-4 bg-navy text-ivory hover:bg-navy-light"
             >
-              Se connecter
+              Réessayer
             </Button>
           </CardContent>
         </Card>
@@ -161,179 +217,207 @@ export default function DashboardPage() {
     );
   }
 
-  // ─── Connecté — afficher le statut ───────────────────────────────
-  const role = profileData?.role ?? ("receptionist" as Role);
-
-  return (
-    <div className="space-y-6">
-      {/* En-tête */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+  // ─── Non-super_admin view ────────────────────────────────────────
+  if (otherData) {
+    const role = otherData.role as Role;
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="space-y-6"
+      >
         <div>
-          <h1 className="text-2xl font-semibold text-navy">
-            Bienvenue{profileData?.full_name ? `, ${profileData.full_name}` : ""} 👋
+          <h1 className="font-serif text-2xl font-semibold text-navy">
+            Bienvenue, {otherData.full_name} 👋
           </h1>
           <p className="mt-1 text-sm text-slate">
-            Voici le statut de votre connexion et de votre session.
+            {otherData.message ?? "Voici votre espace de travail."}
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={handleRefresh}>
-            <RefreshCw className="mr-2 h-4 w-4" />
-            Actualiser
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleLogout}
-            className="text-red-600 hover:bg-red-50 hover:text-red-700"
-          >
-            <LogOut className="mr-2 h-4 w-4" />
-            Déconnexion
-          </Button>
+        <Card className="rounded-xl border-border shadow-sm">
+          <CardContent className="p-6">
+            <div className="flex items-center gap-4">
+              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-navy text-xl font-semibold text-ivory">
+                {otherData.full_name.charAt(0).toUpperCase()}
+              </div>
+              <div>
+                <p className="text-lg font-semibold text-navy">
+                  {otherData.full_name}
+                </p>
+                <Badge
+                  variant="outline"
+                  className={ROLE_COLORS[role] ?? "bg-slate-100 text-slate"}
+                >
+                  {ROLE_LABELS[role] ?? role}
+                </Badge>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
+    );
+  }
+
+  // ─── Super Admin Dashboard ───────────────────────────────────────
+  if (!stats) return null;
+
+  return (
+    <motion.div
+      variants={container}
+      initial="hidden"
+      animate="show"
+      className="space-y-8"
+    >
+      {/* Header */}
+      <motion.div variants={item} className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="font-serif text-2xl font-semibold text-navy">
+            Bonjour, {stats.full_name} 👋
+          </h1>
+          <p className="mt-1 text-sm text-slate">
+            Voici un aperçu de votre plateforme OGOTEL Prestige.
+          </p>
         </div>
-      </div>
+        <Badge variant="outline" className="border-red-200 bg-red-100 text-red-800 w-fit">
+          Super Administrateur
+        </Badge>
+      </motion.div>
 
-      {/* Grille de statut */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {/* ─── Carte : Authentification ────────────────────── */}
-        <Card className="border-green-200 bg-green-50/50">
-          <CardContent className="p-6">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-100">
-                <CheckCircle2 className="h-5 w-5 text-green-600" />
-              </div>
-              <div>
-                <p className="font-medium text-green-800">Connecté</p>
-                <p className="text-xs text-green-600">Session active</p>
-              </div>
-            </div>
-            <div className="mt-4 space-y-1 rounded-lg bg-white/80 p-3">
-              <div className="flex items-center gap-2 text-sm">
-                <User className="h-3.5 w-3.5 text-slate" />
-                <span className="text-slate">E-mail :</span>
-                <span className="font-medium text-navy truncate">
-                  {userEmail ?? "—"}
-                </span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* ─── Carte : Profil & Rôle ───────────────────────── */}
-        <Card className={profileData ? "border-gold/30 bg-gold/5" : "border-amber-200 bg-amber-50/50"}>
-          <CardContent className="p-6">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gold/15">
-                <ShieldCheck className="h-5 w-5 text-gold-dark" />
-              </div>
-              <div>
-                <p className="font-medium text-navy">Rôle</p>
-                <p className="text-xs text-slate">Profil utilisateur</p>
-              </div>
-            </div>
-            <div className="mt-4 space-y-3">
-              <Badge className={ROLE_STYLES[role]} variant="outline">
-                {ROLE_LABELS[role]}
-              </Badge>
-              {profileData?.hotel_name && (
-                <div className="flex items-center gap-2 text-sm">
-                  <Building2 className="h-3.5 w-3.5 text-slate" />
-                  <span className="text-slate">Hôtel :</span>
-                  <span className="font-medium text-navy">
-                    {profileData.hotel_name}
-                  </span>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* ─── Carte : Base de données ─────────────────────── */}
-        <Card
-          className={
-            dbConnected === true
-              ? "border-green-200 bg-green-50/50"
-              : dbConnected === false
-                ? "border-amber-200 bg-amber-50/50"
-                : "border-slate-200"
-          }
-        >
-          <CardContent className="p-6">
-            <div className="flex items-center gap-3">
-              <div
-                className={`flex h-10 w-10 items-center justify-center rounded-full ${
-                  dbConnected === true
-                    ? "bg-green-100"
-                    : dbConnected === false
-                      ? "bg-amber-100"
-                      : "bg-slate-100"
-                }`}
+      {/* KPI Cards */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {KPIS.map((kpi) => {
+          const value = stats[kpi.key as keyof SuperAdminStats] as number;
+          return (
+            <motion.div key={kpi.key} variants={item}>
+              <Card
+                className={`rounded-xl border border-border border-l-4 ${kpi.border} bg-white shadow-sm transition-shadow hover:shadow-md`}
               >
-                <Key
-                  className={`h-5 w-5 ${
-                    dbConnected === true
-                      ? "text-green-600"
-                      : dbConnected === false
-                        ? "text-amber-600"
-                        : "text-slate"
-                  }`}
-                />
-              </div>
-              <div>
-                <p className="font-medium text-navy">Base de données</p>
-                <p className="text-xs text-slate">Schéma Supabase</p>
-              </div>
-            </div>
-            <div className="mt-4">
-              {dbConnected === true && (
-                <p className="text-sm text-green-700">
-                  ✅ Connecté — le schéma est bien initialisé.
-                </p>
-              )}
-              {dbConnected === false && (
-                <p className="text-sm text-amber-700">
-                  ⚠️ Schéma non trouvé. Exécutez{" "}
-                  <code className="rounded bg-amber-100 px-1.5 py-0.5 text-xs font-mono">
-                    supabase/schema.sql
-                  </code>{" "}
-                  dans le SQL Editor.
-                </p>
-              )}
-              {dbConnected === null && (
-                <p className="text-sm text-slate">
-                  ◌ Impossible de vérifier (pas de profil trouvé).
-                </p>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+                <CardContent className="p-5">
+                  <div className="flex items-start justify-between">
+                    <div className="space-y-1">
+                      <p className="text-sm font-medium text-slate">
+                        {kpi.label}
+                      </p>
+                      <p className="text-3xl font-bold text-navy">
+                        {value.toLocaleString("fr-FR")}
+                      </p>
+                    </div>
+                    <div className={`rounded-lg ${kpi.bg} p-2.5`}>
+                      <kpi.icon className={`h-5 w-5 ${kpi.iconColor}`} />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          );
+        })}
       </div>
 
-      {/* Section d'aide */}
-      <Card>
-        <CardContent className="p-6">
-          <h3 className="font-medium text-navy">
-            Prochaines étapes
-          </h3>
-          <p className="mt-2 text-sm text-slate">
-            Si la base de données est connectée, vous pouvez commencer à utiliser
-            l&apos;application. Sinon, exécutez le schéma SQL dans le{" "}
-            <a
-              href="https://supabase.com/dashboard/project/igkyjfagucwkznwccknd/sql"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-medium text-gold hover:text-gold-dark underline underline-offset-4"
-            >
-              SQL Editor Supabase
-            </a>
-            , puis créez le super administrateur via l&apos;API{" "}
-            <code className="rounded bg-ivory px-1.5 py-0.5 text-xs font-mono text-navy">
-              POST /api/setup/create-super-admin
-            </code>
-            .
-          </p>
-        </CardContent>
-      </Card>
-    </div>
+      {/* Quick Actions */}
+      <motion.div variants={item} className="flex flex-wrap gap-3">
+        <Button
+          asChild
+          className="rounded-xl bg-navy text-ivory hover:bg-navy-light"
+        >
+          <Link href="/dashboard/admin/demandes">
+            <FileText className="mr-2 h-4 w-4" />
+            Voir les demandes
+            {stats.pending_requests > 0 && (
+              <Badge className="ml-2 bg-amber-500 text-white hover:bg-amber-600">
+                {stats.pending_requests}
+              </Badge>
+            )}
+          </Link>
+        </Button>
+        <Button
+          asChild
+          variant="outline"
+          className="rounded-xl border-border hover:bg-ivory"
+        >
+          <Link href="/dashboard/admin/hotels">
+            <Building2 className="mr-2 h-4 w-4" />
+            Gérer les hôtels
+          </Link>
+        </Button>
+      </motion.div>
+
+      {/* Recent Activity */}
+      <motion.div variants={item}>
+        <Card className="rounded-xl border-border shadow-sm">
+          <CardContent className="p-6">
+            <div className="mb-4 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Activity className="h-5 w-5 text-gold-dark" />
+                <h2 className="font-serif text-lg font-semibold text-navy">
+                  Activité récente
+                </h2>
+              </div>
+              <Button
+                asChild
+                variant="ghost"
+                size="sm"
+                className="text-gold-dark hover:text-gold hover:bg-gold/10"
+              >
+                <Link href="/dashboard/admin/journal">
+                  Tout voir
+                  <ArrowRight className="ml-1 h-4 w-4" />
+                </Link>
+              </Button>
+            </div>
+
+            {!stats.recent_activity || stats.recent_activity.length === 0 ? (
+              <div className="py-8 text-center">
+                <Activity className="mx-auto mb-3 h-10 w-10 text-slate/40" />
+                <p className="text-sm text-slate">
+                  Aucune activité récente
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {stats.recent_activity.slice(0, 10).map((log: ActivityLog) => (
+                  <div
+                    key={log.id}
+                    className="flex items-start gap-3 rounded-lg border border-border/50 px-4 py-3 transition-colors hover:bg-ivory/50"
+                  >
+                    <span className="mt-0.5 text-lg">
+                      {getActionIcon(log.action as ActivityAction)}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-sm font-medium text-navy">
+                          {log.details?.user_name as string ?? "Utilisateur"}
+                        </span>
+                        <Badge
+                          variant="outline"
+                          className={`text-[10px] px-1.5 py-0 ${ROLE_COLORS[log.user_role as Role] ?? "bg-slate-100 text-slate"}`}
+                        >
+                          {log.user_role ? (ROLE_LABELS[log.user_role as Role] ?? log.user_role) : ""}
+                        </Badge>
+                      </div>
+                      <p className="mt-0.5 text-sm text-slate">
+                        <span className="font-medium text-navy/80">
+                          {ACTIVITY_ACTION_LABELS[log.action as ActivityAction] ?? log.action}
+                        </span>
+                        {log.entity_type && (
+                          <span>
+                            {" "}
+                            — {log.entity_type}
+                            {log.entity_id ? ` #${log.entity_id.slice(0, 8)}` : ""}
+                          </span>
+                        )}
+                      </p>
+                    </div>
+                    <span className="whitespace-nowrap text-xs text-slate">
+                      {getRelativeTime(log.created_at)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </motion.div>
+    </motion.div>
   );
 }

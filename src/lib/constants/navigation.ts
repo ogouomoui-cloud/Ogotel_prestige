@@ -12,8 +12,13 @@ import {
   LogOut,
   Bell,
   UserCircle,
+  FileText,
+  ScrollText,
+  CreditCard,
+  Activity,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import type { Role } from "./roles";
 
 // ─── Navigation publique ─────────────────────────────────────────────
 export interface NavItem {
@@ -39,11 +44,43 @@ export interface SidebarItem {
 }
 
 export const DASHBOARD_NAV: SidebarItem[] = [
+  // ─── Super Admin ───────────────────────────────────────────────
   {
-    label: "Tableau de bord",
+    label: "Vue d'ensemble",
     href: "/dashboard",
     icon: LayoutDashboard,
     roles: ["super_admin", "hotel_admin", "manager", "receptionist"],
+  },
+  {
+    label: "Demandes",
+    href: "/dashboard/admin/demandes",
+    icon: FileText,
+    roles: ["super_admin"],
+  },
+  {
+    label: "Hôtels",
+    href: "/dashboard/admin/hotels",
+    icon: Building2,
+    roles: ["super_admin"],
+  },
+  {
+    label: "Abonnements",
+    href: "/dashboard/admin/abonnements",
+    icon: CreditCard,
+    roles: ["super_admin"],
+  },
+  {
+    label: "Journal d'activité",
+    href: "/dashboard/admin/journal",
+    icon: ScrollText,
+    roles: ["super_admin"],
+  },
+  // ─── Hôtel Admin / Manager / Réceptionnist ────────────────────
+  {
+    label: "Tableau de bord",
+    href: "/dashboard/hotel",
+    icon: LayoutDashboard,
+    roles: ["hotel_admin", "manager", "receptionist"],
   },
   {
     label: "Réservations",
@@ -78,7 +115,7 @@ export const DASHBOARD_NAV: SidebarItem[] = [
   {
     label: "Mon hôtel",
     href: "/dashboard/mon-hotel",
-    icon: Building2,
+    icon: Hotel,
     roles: ["hotel_admin", "manager"],
   },
   {
@@ -86,12 +123,6 @@ export const DASHBOARD_NAV: SidebarItem[] = [
     href: "/dashboard/statistiques",
     icon: BarChart3,
     roles: ["super_admin", "hotel_admin"],
-  },
-  {
-    label: "Hôtels",
-    href: "/dashboard/hotels",
-    icon: Hotel,
-    roles: ["super_admin"],
   },
   {
     label: "Paramètres",

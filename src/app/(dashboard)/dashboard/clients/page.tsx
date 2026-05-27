@@ -39,6 +39,7 @@ interface Guest {
   is_vip: boolean;
   created_at: string;
   updated_at: string;
+  stats?: GuestStats;
 }
 
 interface GuestStats {

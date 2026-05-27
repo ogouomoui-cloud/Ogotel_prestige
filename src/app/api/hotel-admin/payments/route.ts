@@ -13,12 +13,12 @@ const createPaymentSchema = z.object({
     .string()
     .min(1, "L'identifiant de réservation est requis."),
   amount: z
-    .number({ invalid_type_error: "Le montant doit être un nombre." })
+    .number({ message: "Le montant doit être un nombre." })
     .int("Le montant doit être un entier.")
     .min(1, "Le montant minimum est 1 FCFA.")
     .max(50_000_000, "Le montant maximum est 50 000 000 FCFA."),
   method: z.enum(VALID_METHODS, {
-    errorMap: () => ({ message: "Méthode de paiement invalide." }),
+    message: "Méthode de paiement invalide.",
   }),
   status: z.enum(VALID_STATUSES).default("payee"),
   reference: z

@@ -104,7 +104,7 @@ export default function CreerClientPage() {
   const [submitting, setSubmitting] = useState(false);
 
   const form = useForm<ClientFormValues>({
-    resolver: zodResolver(clientSchema),
+    resolver: zodResolver(clientSchema) as any,
     defaultValues: {
       first_name: "",
       last_name: "",

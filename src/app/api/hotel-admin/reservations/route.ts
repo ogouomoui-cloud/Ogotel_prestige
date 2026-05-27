@@ -23,7 +23,7 @@ const createReservationSchema = z
     guest_phone: z.string().nullable().optional(),
     room_id: z.string().uuid().optional(),
     room_type: z.enum(["standard", "deluxe", "suite", "presidentielle"], {
-      errorMap: () => ({ message: "Type de chambre invalide." }),
+      message: "Type de chambre invalide.",
     }),
     check_in: z.string().min(1, "La date d'arrivée est requise."),
     check_out: z.string().min(1, "La date de départ est requise."),

@@ -243,7 +243,7 @@ export default function ClientDetailPage() {
 
   // Edit form
   const form = useForm<EditClientFormValues>({
-    resolver: zodResolver(editClientSchema),
+    resolver: zodResolver(editClientSchema) as any,
     defaultValues: {
       first_name: "",
       last_name: "",

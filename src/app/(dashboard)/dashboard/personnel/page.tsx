@@ -114,7 +114,7 @@ export default function PersonnelPage() {
   const [togglingId, setTogglingId] = useState<string | null>(null);
 
   const form = useForm<EmployeeFormValues>({
-    resolver: zodResolver(employeeSchema),
+    resolver: zodResolver(employeeSchema) as any,
     defaultValues: { full_name: "", email: "", phone: "", role: undefined },
   });
 

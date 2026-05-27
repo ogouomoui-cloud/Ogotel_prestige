@@ -128,7 +128,7 @@ export default function CreerReservationPage() {
   const [clientSearching, setClientSearching] = useState(false);
 
   const form = useForm<ReservationFormValues>({
-    resolver: zodResolver(reservationSchema),
+    resolver: zodResolver(reservationSchema) as any,
     defaultValues: {
       guest_first_name: "",
       guest_last_name: "",

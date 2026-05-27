@@ -137,7 +137,7 @@ export async function PATCH(
     // ─── Si désactivation, révoquer la session ────────────────────
     if (!body.is_active) {
       try {
-        await admin.auth.admin.signOutUser(employeeId);
+        await admin.auth.admin.signOut(employeeId);
       } catch {
         // L'utilisateur peut ne pas avoir de session active — c'est normal
       }

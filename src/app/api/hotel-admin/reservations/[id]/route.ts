@@ -22,7 +22,7 @@ const updateReservationSchema = z.object({
   room_id: z.string().uuid().nullable().optional(),
   room_type: z
     .enum(["standard", "deluxe", "suite", "presidentielle"], {
-      errorMap: () => ({ message: "Type de chambre invalide." }),
+      message: "Type de chambre invalide.",
     })
     .optional(),
   check_in: z.string().min(1, "La date d'arrivée est requise.").optional(),
@@ -40,9 +40,7 @@ const updateReservationSchema = z.object({
   notes: z.string().max(1000, "Les notes sont trop longues (max 1000).").nullable().optional(),
   status: z
     .enum(["annulee", "no_show"], {
-      errorMap: () => ({
-        message: 'Seuls les statuts "annulee" et "no_show" peuvent être définis manuellement.',
-      }),
+      message: 'Seuls les statuts "annulee" et "no_show" peuvent être définis manuellement.',
     })
     .optional(),
 });

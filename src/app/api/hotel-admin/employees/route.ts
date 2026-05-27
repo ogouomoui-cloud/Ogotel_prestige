@@ -19,7 +19,7 @@ const createEmployeeSchema = z.object({
     .nullable()
     .optional(),
   role: z.enum(["manager", "receptionist"], {
-    errorMap: () => ({ message: "Le rôle doit être 'manager' ou 'réceptionniste'." }),
+    message: "Le rôle doit être 'manager' ou 'réceptionniste'.",
   }),
   password: z
     .string()

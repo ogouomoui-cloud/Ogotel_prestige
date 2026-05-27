@@ -59,7 +59,7 @@ export default function ModifierHotelPage() {
   const [saving, setSaving] = useState(false);
 
   const form = useForm<HotelFormValues>({
-    resolver: zodResolver(hotelSchema),
+    resolver: zodResolver(hotelSchema) as any,
     defaultValues: {
       name: "",
       address: "",

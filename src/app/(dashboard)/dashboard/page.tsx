@@ -675,6 +675,7 @@ export default function DashboardPage() {
                               reservee: "bg-blue-400",
                               occupee: "bg-gold",
                               maintenance: "bg-amber-400",
+                              nettoyage: "bg-cyan-400",
                             };
                             return (
                               <div

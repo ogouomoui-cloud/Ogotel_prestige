@@ -125,8 +125,8 @@ export async function POST(request: NextRequest) {
       await admin.auth.admin.createUser({
         email: email.toLowerCase().trim(),
         password,
-        emailConfirm: true,
-        userMetadata: { full_name },
+        email_confirm: true,
+        user_metadata: { full_name },
       });
 
     if (authError) {
@@ -194,16 +194,16 @@ export async function POST(request: NextRequest) {
         },
         hotel: hotelRes
           ? {
-              name: hotelRes.name,
-              city: hotelRes.city,
-              country: hotelRes.country,
+              name: (hotelRes as any).name,
+              city: (hotelRes as any).city,
+              country: (hotelRes as any).country,
             }
           : null,
         plan: planRes
           ? {
-              name: planRes.name,
-              tier: planRes.tier,
-              price_monthly: planRes.price_monthly,
+              name: (planRes as any).name,
+              tier: (planRes as any).tier,
+              price_monthly: (planRes as any).price_monthly,
             }
           : null,
       },

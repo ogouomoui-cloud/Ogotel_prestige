@@ -50,21 +50,19 @@ const roomSchema = z.object({
   room_type: z.enum(["standard", "deluxe", "suite", "presidentielle"], {
     message: "Sélectionnez un type.",
   }),
-  floor: z.coerce
-    .number()
-    .int()
-    .min(-2, "Min -2")
-    .max(99, "Max 99"),
-  price_per_night: z.coerce
-    .number()
-    .min(0, "Le prix ne peut pas être négatif.")
-    .max(10_000_000, "Prix trop élevé."),
+  floor: z.preprocess(
+    (v) => (v === "" || v === undefined || v === null ? 0 : Number(v)),
+    z.number().int().min(-2, "Min -2").max(99, "Max 99"),
+  ),
+  price_per_night: z.preprocess(
+    (v) => (v === "" || v === undefined || v === null ? 0 : Number(v)),
+    z.number().min(0, "Le prix ne peut pas être négatif.").max(10_000_000, "Prix trop élevé."),
+  ),
   status: z.enum(["disponible", "occupee", "reservee", "nettoyage", "maintenance"]),
-  capacity: z.coerce
-    .number()
-    .int()
-    .min(1, "Min 1")
-    .max(20, "Max 20"),
+  capacity: z.preprocess(
+    (v) => (v === "" || v === undefined || v === null ? 1 : Number(v)),
+    z.number().int().min(1, "Min 1").max(20, "Max 20"),
+  ),
   amenities: z.array(z.string()).default([]),
   description: z.string().max(500, "Max 500 caractères.").nullable().optional(),
 });
@@ -109,7 +107,7 @@ export default function ModifierChambrePage() {
   const [roomNumber, setRoomNumber] = useState("");
 
   const form = useForm<RoomFormValues>({
-    resolver: zodResolver(roomSchema),
+    resolver: zodResolver(roomSchema) as any,
     defaultValues: {
       number: "",
       room_type: "standard",

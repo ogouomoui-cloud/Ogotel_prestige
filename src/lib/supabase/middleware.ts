@@ -53,10 +53,11 @@ export async function updateSession(request: NextRequest) {
   });
 
   // ─── Récupération de l'utilisateur ──────────────────────────────
-  let user = null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Supabase User type inference issue with try/catch
+  let user: any = null;
   try {
     const { data } = await supabase.auth.getUser();
-    user = data.user;
+    user = data.user ?? null;
   } catch {
     // Session invalide ou erreur réseau — on considère non connecté
   }

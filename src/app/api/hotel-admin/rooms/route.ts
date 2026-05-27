@@ -10,7 +10,7 @@ const createRoomSchema = z.object({
     .min(1, "Le numéro de chambre est requis.")
     .max(10, "Le numéro ne doit pas dépasser 10 caractères."),
   room_type: z.enum(["standard", "deluxe", "suite", "presidentielle"], {
-    errorMap: () => ({ message: "Type de chambre invalide." }),
+    message: "Type de chambre invalide.",
   }),
   floor: z
     .number()

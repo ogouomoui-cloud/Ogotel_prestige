@@ -243,3 +243,31 @@ Stage Summary:
 - Login form only shown when everything is ready (step === "login")
 - Network errors handled gracefully with "unknown" fallback state
 - Prevents crash when Supabase is not configured (no more non-null assertion on undefined env vars)
+
+---
+Task ID: vercel-deployment
+Agent: main
+Task: Deploy OGOTEL Prestige to Vercel with Supabase environment variables
+
+Work Log:
+- Installed Vercel CLI globally via bun
+- Authenticated with Vercel using project token
+- Linked project to Vercel: ogouromains-projects/ogotel-prestige
+- Fixed TypeScript build error: `hasFilters()` function missing in check-in-out page
+- Created `.env.local` with real Supabase credentials for local development
+- Removed placeholder env vars from Vercel and added real ones:
+  - NEXT_PUBLIC_SUPABASE_URL=https://igkyjfagucwkznwccknd.supabase.co
+  - NEXT_PUBLIC_SUPABASE_ANON_KEY (real anon key)
+  - SUPABASE_SERVICE_ROLE_KEY (real service role key)
+  - NEXT_PUBLIC_APP_URL=https://ogotel-prestige.vercel.app
+  - SUPER_ADMIN_EMAIL=admin@ogotel.com
+  - SUPER_ADMIN_WHATSAPP=+2250707070707
+- Attempted GitHub repo connection via CLI (token lacks GitHub integration permissions)
+- Successfully deployed to Vercel production (build passed with real Supabase keys)
+
+Stage Summary:
+- Production URL: https://ogotel-prestige.vercel.app
+- Vercel dashboard: https://vercel.com/ogouromains-projects/ogotel-prestige
+- 6 environment variables configured on Vercel (production)
+- .env.local created for local dev (not committed to git)
+- GitHub repo connection requires manual setup on Vercel dashboard (token permission limitation)
